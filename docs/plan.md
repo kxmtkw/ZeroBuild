@@ -16,6 +16,7 @@
 
 + More Compilers
 	+ MSVC, G++, Clang++ `In-Progress`
+	+ Name Compilers to Compiler Drivers because that's more accurate.
 
 + Stale detection and avoiding recompilation `Done`
 
@@ -42,7 +43,7 @@
 	+ Traceback upto the user script level
 	+ Different and clear error types
 
-+ Clearer and Prettier log messages.
++ Clearer and Prettier log messages. `In-Progress`
 	+ use rich
 
 + Executable to run the build file automatically. `In-Progress`
@@ -57,11 +58,17 @@ zero run bin/main -- --debug
 zero build --debug
 ```
 
++ Allow the user to control the build system more.
+	+ Allow the user to make custom CompilerDrivers to the build system. 
+
++ A CMAKE transpiler that turns the DAG into a `CMakeLists.txt` file.
+	+ This is actually simpler than I thought. Just traverse the DAG and build the CMAKE file as we go.
+
 ## Could have
 
 + Live file watcher to instantly recompile.
 	+ Requires watching every file node in the graph and triggering the build sequence once any file changes.
 	+ Could wait for something like `n` changes.
-+ A CMAKE transpiler that turns the DAG into a `CMakeLists.txt` file.
+
 
 
