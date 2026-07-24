@@ -27,7 +27,7 @@ build.compiler = "gcc"
 build.directory = "build"
 ```
 
-> [!INFO]
+> [!NOTE]
 > Zero is compatible with python pathlib's `Path` object. So you can also specify the directory as `build.directory = Path("build")`.
 > This is useful because:
 > - It allows cross platform configuration files to be read more easily
@@ -111,7 +111,7 @@ target.compiler = "g++"
 ```
 The target `target` is compiled with the `g++` compiler instead of inheriting from the `build` object's compiler.
 
-> [!INFO]
+> [!NOTE]
 > For now only some c/c++ compilers are supported but in the future I will:
 > 1. Add more compilers for different languages
 > 2. Allow the user to build their own compiler class and using it instead of the builtin compilers!
