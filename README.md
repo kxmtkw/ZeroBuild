@@ -44,6 +44,8 @@ zero make
 ```
 A binary named `main` can now be found at `build/bin/main`
 
+Read more in [docs](docs/docs.md).
+
 ## Installation
 
 `Zero` is still in its infant stage, but you can install it through any pypi package manager. The package name is `zero-build`.
