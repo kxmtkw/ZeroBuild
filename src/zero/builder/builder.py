@@ -1,3 +1,4 @@
+from zero.compilers.get import getCompilerName
 from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
@@ -89,7 +90,7 @@ class Builder(NodeVisitor):
 
 		self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
 		
-		self.reporter.taskDone("Link ", f"{node.libpath.name}")
+		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
 
 		self.visited_nodes.add(node)
 
@@ -124,7 +125,7 @@ class Builder(NodeVisitor):
 		
 		self.compiling_shared_lib = False
 
-		self.reporter.taskDone("Link ", f"{node.libpath.name}")
+		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
 
 		self.visited_nodes.add(node)
 	
@@ -138,7 +139,7 @@ class Builder(NodeVisitor):
 
 
 	def visitExecutableNode(self, node: ExecutableNode):
-		
+
 		if node in self.visited_nodes:
 			return
 		
@@ -162,7 +163,7 @@ class Builder(NodeVisitor):
 
 		self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
 
-		self.reporter.taskDone("Link ", f"{node.targetpath.name}")
+		self.reporter.taskDone("Link ", f"{node.targetpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
 
 		self.visited_nodes.add(node)
 

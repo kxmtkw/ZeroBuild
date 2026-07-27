@@ -23,3 +23,10 @@ def getCompiler(compiler: CompilerType, default: BaseCompiler | None = None) -> 
 		if default is None:
 			raise ValueError(f"Unsupported compiler driver: '{compiler}'")
 		return default
+
+def getCompilerName(compiler: BaseCompiler) -> str:
+	for key, val in _COMPILERS.items():
+		if val == compiler:
+			return key
+
+	return "unknown"
