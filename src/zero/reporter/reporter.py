@@ -55,5 +55,9 @@ class TerminalReporter:
 
 
 	def error(self, msg: str):
+
+		if self._is_phase:
+			self.endPhase("Failed")
+
 		self._console.print(f"[bold red]Error: {msg} [/bold red]")
 	
