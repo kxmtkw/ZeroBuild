@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zero.errors.errors import ZeroError, ZeroCompilationError
+from zero.errors.errors import ZeroAPIError, ZeroError, ZeroCompilationError
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
 from zero.builder.builder import Builder
@@ -32,8 +32,11 @@ class Orchestrator:
 		
 		try:
 			module = ModuleLoader(self.config_file)
+		except ZeroAPIError as e:
+			self.reportAndExit(str(e))
 		except Exception as e:
-			raise ZeroError(f"[{e.__class__.__name__}] {str(e)}")
+			self.reportAndExit(f"[{e.__class__.__name__}] {str(e)}")
+
 		
 		return module
 	
