@@ -24,3 +24,4 @@ class BuildConfig:
 	"""
 	directory: Directory
 	fresh_build: bool
+	threads: int

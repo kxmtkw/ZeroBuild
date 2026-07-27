@@ -18,7 +18,7 @@ class Builder(NodeVisitor):
 
 		super().__init__()
 
-		self.batch_executor = BatchExecutor()
+		self.batch_executor = BatchExecutor(config.threads)
 
 		self.fresh_build = config.fresh_build
 

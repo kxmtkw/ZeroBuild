@@ -41,7 +41,7 @@ class Orchestrator:
 		return module
 	
 
-	def configureBuild(self, build_dir: Path, fresh_build: bool) -> BuildConfig:
+	def configureBuild(self, build_dir: Path, fresh_build: bool, threads: int) -> BuildConfig:
 
 		config = BuildConfig()
 		config.directory = Directory()
@@ -57,6 +57,8 @@ class Orchestrator:
 
 		config.fresh_build = fresh_build
 
+		config.threads = threads
+
 		return config
 
 	
@@ -66,6 +68,8 @@ class Orchestrator:
 			
 		self.reporter.taskDone("Directory", f"{str(build.directory)} chosen.")
 
+		self.reporter.taskDone("Threads", f"compiling with {config.threads} threads")
+		
 		self.graph = GraphConstructor(config)
 
 		try:
@@ -152,7 +156,7 @@ class Orchestrator:
 		build = self.getBuild(module)
 		build._targets = self.getTargets(module)
 
-		config = self.configureBuild(build.directory, fresh)
+		config = self.configureBuild(build.directory, fresh, 3)
 
 		self.make(build, config)
 
@@ -177,7 +181,7 @@ class Orchestrator:
 			
 		build._targets = needed_targets
 
-		config = self.configureBuild(build.directory, fresh)
+		config = self.configureBuild(build.directory, fresh, 3)
 
 		self.make(build, config)
 
@@ -187,7 +191,7 @@ class Orchestrator:
 		module = self.loadConfigFile()
 		build = self.getBuild(module)
 		targets = self.getTargets(module)
-		config = self.configureBuild(build.directory, fresh)
+		config = self.configureBuild(build.directory, fresh, 3)
 
 		executable: Executable | None = None
 
