@@ -10,6 +10,8 @@ class CacheManager:
 		self._filepath = filepath
 		self._data: dict[str, Any] = {}
 
+		self.load()
+
 
 	def load(self) -> bool:
 
@@ -67,7 +69,7 @@ class CacheManager:
 		return current
 
 
-	def set(self, *keypath: str, value: Any) -> None:
+	def set(self, *keypath: str, value: Any) -> Any:
 
 		if not keypath:
 			raise ValueError("Keypath cannot be empty.")
@@ -79,3 +81,9 @@ class CacheManager:
 			current = current[key]
 
 		current[keypath[-1]] = value
+
+		return value
+
+
+	def moveData(self, other: CacheManager):
+		self._data = other._data.copy()

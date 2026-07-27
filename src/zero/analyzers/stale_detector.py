@@ -2,7 +2,9 @@ from zero.graph.nodes import Node
 from zero.graph.visitor import NodeVisitor
 from zero.graph.nodes import *
 
+from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
+from zero.utils.cache_manager import CacheManager
 
 
 def markStale(node: Node):
@@ -16,10 +18,13 @@ def isStale(node: Node) -> bool:
 class StaleDetector(NodeVisitor):
 
 
-	def __init__(self) -> None:
+	def __init__(self, config: BuildConfig) -> None:
 		self.visited_nodes: set[Node] = set()
 		self.current_source_outpath: Path | None = None	
 		self.stale_count = 0
+
+		self.old_mtime_cache = CacheManager(config.directory.build / "old_mtime.cache")
+		self.mtime_cache = CacheManager(config.directory.build / "mtime.cache")
 
 
 	def markStale(self, node: Node):
@@ -39,10 +44,8 @@ class StaleDetector(NodeVisitor):
 		else:
 			return
 		
-	
 		for t in node.targets:
 			self.visit(t)
-
 
 		
 	def visitExecutableNode(self, node: ExecutableNode):
@@ -128,11 +131,14 @@ class StaleDetector(NodeVisitor):
 			self.markStale(node)
 			return
 		
-		if node.outpath.stat().st_mtime < node.filepath.stat().st_mtime:
+		old_mtime = self.old_mtime_cache.get(str(node.filepath), default=0, valid_classes=(float,int,)) 
+		new_mtime = self.mtime_cache.get(str(node.filepath), default=1, valid_classes=(float,int,)) 
+
+		if new_mtime > old_mtime:
 			self.markStale(node)
 			return
 		
-		self.current_source_outpath = node.outpath
+		self.current_source_outpath = node.filepath
 
 		for header in node.deps:
 			self.visit(header)
@@ -154,8 +160,11 @@ class StaleDetector(NodeVisitor):
 		if self.current_source_outpath is None:
 			raise RuntimeError("Source path should not have been None. Unexpected.")
 		
-		if self.current_source_outpath.stat().st_mtime < node.filepath.stat().st_mtime:
-			markStale(node)
+		old_mtime = self.old_mtime_cache.get(str(node.filepath), default=0, valid_classes=(float,int,)) 
+		new_mtime = self.mtime_cache.get(str(node.filepath), default=1, valid_classes=(float,int,)) 
+
+		if new_mtime > old_mtime:
+			self.markStale(node)
 			return
 		
 		for header in node.deps:

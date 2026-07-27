@@ -89,7 +89,7 @@ class Orchestrator:
 		self.reporter.taskDone("Cycles", "none detected")
 
 		if not config.fresh_build:
-			stale = StaleDetector()
+			stale = StaleDetector(config)
 			stale.visit(root)
 			count = stale.getStaleCount()
 			msg = "no need for compilation" if count == 0 else f"detected (count = {count})"

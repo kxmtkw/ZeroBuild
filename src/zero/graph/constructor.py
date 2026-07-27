@@ -27,7 +27,7 @@ class GraphConstructor:
 		self.made_executables: dict[Executable, ExecutableNode] = {}
 		self.made_static_libs: dict[StaticLibrary, StaticLibraryNode] = {}
 		self.made_shared_libs: dict[SharedLibrary, SharedLibraryNode] = {}
-		self.made_ompiled_libs: dict[PreCompiledLibrary, PreCompiledLibraryNode] = {}
+		self.made_compiled_libs: dict[PreCompiledLibrary, PreCompiledLibraryNode] = {}
 
 		self.build_dir = config.directory.build
 		self.object_dir = config.directory.objects
@@ -36,7 +36,8 @@ class GraphConstructor:
 		self.shared_lib_dir = config.directory.shared_lib
 
 		self.cache: CacheManager = CacheManager(self.build_dir / "deps.cache")
-		
+		self.old_mtime_cache = CacheManager(self.build_dir / "old_mtime.cache")
+		self.mtime_cache = CacheManager(self.build_dir / "mtime.cache")
 		
 		self.include_dirs: list[Path] = []
 		
@@ -45,8 +46,6 @@ class GraphConstructor:
 
 		targets = []
 		compilers = {}
-
-		self.cache.load()
 
 		for t in build._targets:
 			self.current_compiler = t._compiler_object
@@ -60,6 +59,7 @@ class GraphConstructor:
 		)
 
 		self.cache.save()
+		self.mtime_cache.save()
 		
 		return root
 	
@@ -214,7 +214,15 @@ class GraphConstructor:
 		)
 		self.visited_headers[path] = header
 
-		cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
+		# 0 because if the old mtime cache does not exist, new_mtime will always be greater than 0
+		old_mtime = self.old_mtime_cache.get(str(path), default=0, valid_classes=(float,int,)) 
+		new_mtime = self.mtime_cache.set(str(path), value=path.stat().st_mtime)
+
+
+		if new_mtime > old_mtime:
+			cached_deps = None
+		else:
+			cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
 
 		if cached_deps is None:
 			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
@@ -244,17 +252,24 @@ class GraphConstructor:
 			outfile,
 			[]
 		)
-
 		self.visited_sources[path] = source
 
-		cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
+		# 0 because if the old mtime cache does not exist, new_mtime will always be greater than 0
+		old_mtime = self.old_mtime_cache.get(str(path), default=0, valid_classes=(float,int,)) 
+		new_mtime = self.mtime_cache.set(str(path), value=path.stat().st_mtime)
+
+		
+		if new_mtime > old_mtime:
+			cached_deps = None
+		else:
+			cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
 		
 		if cached_deps is None:
 			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
 			self.cache.set(str(path), value=[str(d) for d in deps])
 		else:
 			deps = [Path(d) for d in cached_deps]
-			
+
 		included_headers = [self.makeHeaderNode(d) for d in deps]
 
 		source.deps = included_headers

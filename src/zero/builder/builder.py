@@ -9,6 +9,7 @@ from zero.compilers import BaseCompiler
 from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
 from zero.analyzers.stale_detector import isStale
+from zero.utils.cache_manager import CacheManager
 
 from .batch_executor import BatchExecutor
 
@@ -33,6 +34,9 @@ class Builder(NodeVisitor):
 		self.root: RootNode
 		self.current_compiler: BaseCompiler
 		self.compilers_stack: list[BaseCompiler] = []
+
+		self.old_mtime_cache = CacheManager(config.directory.build / "old_mtime.cache")
+		self.mtime_cache = CacheManager(config.directory.build / "mtime.cache")
 
 
 	def detectStaleness(self, node: Node) -> bool:
@@ -64,6 +68,8 @@ class Builder(NodeVisitor):
 		for target in node.targets:
 			self.current_compiler = node.target_compilers[target]
 			self.visit(target)
+
+		self.old_mtime_cache.save()
 
 		self.reporter.endPhase("Build complete")
 
@@ -187,6 +193,7 @@ class Builder(NodeVisitor):
 			include_dirs=self.include_dirs, 
 			arguments=self.current_target_arguments
 		)
+		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
 		
 		self.reporter.taskDone("Built", f"{node.filepath}")
 
@@ -196,6 +203,7 @@ class Builder(NodeVisitor):
 	def visitHeaderNode(self, node: HeaderNode):
 		for deps in node.deps:
 			self.visit(deps)
+		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
 
 
 	def compileSources(self, sources: Sequence[SourceNode]):
