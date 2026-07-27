@@ -55,7 +55,7 @@ class TerminalReporter:
 		if self._is_phase:
 			self._console.print(f"    [blue]│[/blue][bold green] {task:<16}[/bold green] {msg} ")
 		else:
-			self._console.print(f"[bold green] {task:<16}[/bold green] {msg} ")
+			self._console.print(f"[bold green]{task:<16}[/bold green] {msg} ")
 
 
 	def error(self, msg: str):
