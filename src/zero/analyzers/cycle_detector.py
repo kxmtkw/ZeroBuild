@@ -1,3 +1,4 @@
+from zero.errors.errors import ZeroError
 from zero.graph.nodes import Node
 from zero.graph.visitor import NodeVisitor
 from zero.graph.nodes import *
@@ -11,12 +12,14 @@ class CycleDetector(NodeVisitor):
 	def __init__(self) -> None:
 		self.visited_nodes: set[Node] = set()
 		self.tracked_nodes: list[Node] = []
+
+		self.cycle: list[Node] = []
 		self.is_cycle_detected: bool = False
 
 		self.reporter = getReporter()
 
 
-	def getCycle(self, node: Node) -> list[Node]:
+	def getCycle(self, node: Node):
 
 		self.is_cycle_detected = True
 		
@@ -28,13 +31,13 @@ class CycleDetector(NodeVisitor):
 				cycle.append(node)
 				break
 
-		return cycle
+		self.cycle = cycle
 	
 
 	def visit(self, node: Node):
 		
 		if self.is_cycle_detected:
-			return 
+			raise ZeroError(f"Cycle detected:\n{' -> '.join([str(x) for x in self.cycle])}")
 		
 		return super().visit(node)
 	

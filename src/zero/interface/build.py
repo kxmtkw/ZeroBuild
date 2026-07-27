@@ -3,7 +3,7 @@ from typing import Literal
 
 from zero.compilers.base import BaseCompiler
 from zero.compilers.types import CompilerType
-from zero.errors.errors import ZeroUserError
+from zero.errors.errors import ZeroAPIError
 from zero.interface.target import Target
 
 from zero.interface.library import Library

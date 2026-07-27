@@ -1,5 +1,5 @@
 from pathlib import Path
-from zero.errors import ZeroUserError
+from zero.errors.errors import ZeroAPIError
 
 
 class Source:
@@ -19,9 +19,9 @@ class Source:
 			elif isinstance(f, Path):
 				p = f
 			else:
-				raise ZeroUserError(TypeError, f"Expected str or Path object. Got {type(f)}")
+				raise ZeroAPIError(TypeError, f"Expected str or Path object. Got {type(f)}")
 
 			if not p.exists():
-				raise ZeroUserError(FileNotFoundError, f"Source file not found: {str(p)}")
+				raise ZeroAPIError(FileNotFoundError, f"Source file not found: {str(p)}")
 			
 			self._sources_paths.append(p)

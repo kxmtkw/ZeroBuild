@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zero.errors import ZeroError
+from zero.errors.errors import ZeroError, ZeroCompilationError
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
 from zero.builder.builder import Builder
@@ -65,13 +65,20 @@ class Orchestrator:
 
 		self.graph = GraphConstructor(config)
 
-		root = self.graph.makeRoot(build)
+		try:
+			root = self.graph.makeRoot(build)
+		except ZeroError as e:
+			self.reportAndExit(str(e))
 
 		self.reporter.taskDone("Graph", "constructed")
 
 		cycle = CycleDetector()
-		cycle.visit(root)
 		
+		try:
+			cycle.visit(root)
+		except ZeroError as e:
+			self.reportAndExit(str(e))
+
 		self.reporter.taskDone("Cycles", "none detected")
 
 		if not config.fresh_build:
@@ -86,7 +93,11 @@ class Orchestrator:
 		
 		self.reporter.endPhase("Configuration complete.")
 
-		self.builder = Builder(config)
+		try:
+			self.builder = Builder(config)
+		except ZeroCompilationError as e:
+			self.reportAndExit(str(e))
+
 		self.builder.visit(root)
 
 
@@ -95,15 +106,15 @@ class Orchestrator:
 		build = module.getAttribute("build")
 
 		if not isinstance(build, Build):
-			raise ZeroError(f"Attribute 'build' not found or is not an instance of Build.")
+			self.reportAndExit(f"Attribute 'build' not found or is not an instance of Build.")
 		
 		if build._compiler is None:
-			raise ZeroError(f"No compiler provided for build.")
+			self.reportAndExit(f"No compiler provided for build.")
 		
 		try:
 			build._compiler_object = getCompiler(build._compiler)
 		except ValueError:
-			raise ZeroError(f"Unknown compiler: {build._compiler}")
+			self.reportAndExit(f"Unknown compiler: {build._compiler}")
 		
 		return build
 
@@ -125,7 +136,7 @@ class Orchestrator:
 			try:
 				value._compiler_object = build._compiler_object if value._compiler == "inherit" else getCompiler(value._compiler)
 			except ValueError:
-				raise ZeroError(f"Unknown compiler: {value._compiler}")
+				self.reportAndExit(f"Unknown compiler: {value._compiler}")
 			
 			targets.append(value)
 
@@ -159,7 +170,7 @@ class Orchestrator:
 
 
 		if len(target_identifiers) > 0:
-			raise ZeroError(f"Target{'s' if len(target_identifiers) > 1 else ''} not found: {', '.join(target_identifiers)}")
+			self.reportAndExit(f"Target{'s' if len(target_identifiers) > 1 else ''} not found: {', '.join(target_identifiers)}")
 			
 		build._targets = needed_targets
 
@@ -183,7 +194,7 @@ class Orchestrator:
 				break
 
 		if executable is None:
-			raise RuntimeError(f"Executable {name} not found.")
+			self.reportAndExit(f"Executable {name} not found.")
 		
 		executable_path = config.directory.binary / name
 
@@ -198,7 +209,9 @@ class Orchestrator:
 			args
 		)
 		
-	
+	def reportAndExit(self, error: str):
+		self.reporter.error(str(error))
+		exit(1)
 
 
 

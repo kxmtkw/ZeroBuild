@@ -1,6 +1,6 @@
 
 from zero.compilers.types import CompilerType
-from zero.errors.errors import ZeroUserError
+from zero.errors.errors import ZeroAPIError
 from zero.interface.source import Source
 from zero.interface.library import Library
 
@@ -30,14 +30,14 @@ class Target:
 		Cannot be accessed if not manually assigned.
 		"""
 		if not hasattr(self, "_name"):
-			raise ZeroUserError(ValueError, "Name has not been specified for this target yet.")
+			raise ZeroAPIError(ValueError, "Name has not been specified for this target yet.")
 		return self._name
 	
 
 	@name.setter
 	def name(self, name: str):
 		if name == "":
-			raise ZeroUserError(ValueError, "Target name cannot be an empty string.")
+			raise ZeroAPIError(ValueError, "Target name cannot be an empty string.")
 		self._name = name
 
 
@@ -46,7 +46,7 @@ class Target:
 		"Specify the source files for the executable. Can only be set once."	
 
 		if not hasattr(self, "_source"):
-			raise ZeroUserError(ValueError, "Source not specified for this target.")
+			raise ZeroAPIError(ValueError, "Source not specified for this target.")
 			
 		return self._source
 	
