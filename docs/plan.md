@@ -32,9 +32,17 @@
 	+ If they depend on the same source file (mid-level edge case), we create seperate nodes entirely to avoid arguments conflict.
 		+ That means the object files must be sorted by target in the objects/
 
-+ Threading/Multiprocessing compilation
-	+ Requires converting the graph into a 1D array so the builder can multiprocess
++ Threading/Multiprocessing compilation `DONE`
+	+ Requires converting the graph into a 1D array so the builder can multiprocess `DID NOT NEED`
 
++ Boxed errors and warnings
+	+ Errors look like ahh right now.
+		+ API errors for when the user typed something wrong or some file is missing
+		+ Build errors when the build fails liek cycle detected etc.
+		+ Compilation Warnings when compiler emits a warning. 
+		+ Compilation errors
+			+ The last two should be boxed so it makes it clear that this was an error in the user code.
+			
 + Add more visitors.
 	+ Cycle detectors `Done`
 	+ Change detectors `Done`
