@@ -12,6 +12,9 @@ class Node(ABC):
 	def __init__(self, **kwargs):
 		pass
 
+	def __str__(self) -> str:
+		return super().__str__()
+
 
 class TargetNode(Node):
 	"""
@@ -63,12 +66,24 @@ class RootNode(Node):
 		self.targets: Sequence[TargetNode] = targets
 		self.target_compilers: dict[TargetNode, BaseCompiler] = compilers
 
+	def __str__(self) -> str:
+		return f"Root()"
+
+	def __repr__(self) -> str:
+		return str("root")
+
 
 class ExecutableNode(TargetNode):
 
 	def __init__(self, exepath: Path, sources: Sequence[SourceNode], libs: Sequence[LibraryNode], arguments: list[str], private_headers: Sequence[Path]):
 		super().__init__(targetpath=exepath, sources=sources, libs=libs, arguments=arguments)
 		self.private_headers = private_headers
+
+	def __str__(self) -> str:
+		return f"Executable({self.targetpath.name})"
+
+	def __repr__(self) -> str:
+		return str(self.targetpath.name)
 
 
 class StaticLibraryNode(TargetNode, LibraryNode):
@@ -84,6 +99,12 @@ class StaticLibraryNode(TargetNode, LibraryNode):
 			public_headers=public_headers
 		)
 
+	def __str__(self) -> str:
+		return f"StaticLib({self.targetpath.name})"
+
+	def __repr__(self) -> str:
+		return str(self.targetpath.name)
+
 
 class SharedLibraryNode(TargetNode, LibraryNode):
 
@@ -98,6 +119,12 @@ class SharedLibraryNode(TargetNode, LibraryNode):
 			public_headers=public_headers
 		)
 
+	def __str__(self) -> str:
+		return f"SharedLib({self.targetpath.name})"
+
+	def __repr__(self) -> str:
+			return str(self.targetpath.name)
+	
 
 class PreCompiledLibraryNode(LibraryNode, FileNode):
 
@@ -109,6 +136,12 @@ class PreCompiledLibraryNode(LibraryNode, FileNode):
 			public_headers=public_headers
 		)
 
+	def __str__(self) -> str:
+		return f"PreCompiledLib({str(self.libpath)})"
+
+	def __repr__(self) -> str:
+		return str(self.libpath)
+
 
 class SourceNode(FileNode):
 	
@@ -117,9 +150,21 @@ class SourceNode(FileNode):
 		self.deps: Sequence[FileNode] = deps
 		self.outpath: Path = outpath
 
+	def __str__(self) -> str:
+		return f"SourceFile({str(self.filepath)})"
+
+	def __repr__(self) -> str:
+		return str(self.filepath)
+
 
 class HeaderNode(FileNode):
 
 	def __init__(self, filepath: Path, deps: Sequence[FileNode]):
 		super().__init__(filepath=filepath)
 		self.deps: Sequence[FileNode] = deps
+
+	def __str__(self) -> str:
+		return f"HeaderFile({str(self.filepath)})"
+
+	def __repr__(self) -> str:
+		return str(self.filepath)

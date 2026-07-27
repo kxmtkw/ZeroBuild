@@ -37,7 +37,7 @@ class CycleDetector(NodeVisitor):
 	def visit(self, node: Node):
 		
 		if self.is_cycle_detected:
-			raise ZeroError(f"Cycle detected:\n{' -> '.join([str(x) for x in self.cycle])}")
+			raise ZeroError(f"Cycle detected:\n{' -> '.join([repr(x) for x in self.cycle])}")
 		
 		return super().visit(node)
 	
