@@ -46,6 +46,11 @@ class Builder(NodeVisitor):
 			return isStale(node)
 
 
+	def halt(self):
+		self.batch_executor.halt()
+		self.old_mtime_cache.save()
+
+
 	def visit(self, node: Node):
 
 		if isinstance(node, TargetNode):

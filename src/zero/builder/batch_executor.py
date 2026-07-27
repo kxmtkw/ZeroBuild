@@ -35,3 +35,11 @@ class BatchExecutor:
 		self._executor = None
 
 		return futures
+
+
+	def halt(self):
+
+		if not self._executor:
+			return
+
+		self._executor.shutdown(False, cancel_futures=True)

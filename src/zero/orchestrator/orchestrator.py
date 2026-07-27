@@ -23,6 +23,7 @@ class Orchestrator:
 	def __init__(self) -> None:
 		self.reporter = TerminalReporter()
 		self.config_file = Path("zerobuild.py")
+		self.builder: Builder | None = None
 
 
 	def loadConfigFile(self) -> ModuleLoader:
@@ -212,10 +213,19 @@ class Orchestrator:
 		executor = Executor(str(executable_path), args)
 
 		executor.run()
-		
+
+
+	def abort(self):
+		if self.builder: 
+			self.builder.halt()
+			
+		self.reporter.endPhase("User Aborted")
+
+
 	def reportAndExit(self, error: str):
 		self.reporter.error(str(error))
 		exit(1)
+
 
 
 

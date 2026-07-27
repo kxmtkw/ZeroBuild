@@ -2,11 +2,11 @@ from zero.orchestrator import Orchestrator
 from zero.cli.args import setupParser, parseArguments
 
 
-def main():
+def runCli(orchestrator: Orchestrator):
+
 	parser = setupParser()
 	args = parseArguments(parser)
 
-	orchestrator = Orchestrator()
 
 	if args.command == "make":
 		if len(args.target) == 0:
@@ -18,3 +18,10 @@ def main():
 		orchestrator.runExecutable(args.executable, args.executable_args, fresh=args.fresh)
 		
 
+def main():
+	orchestrator = Orchestrator()
+	try:
+		runCli(orchestrator)
+	except KeyboardInterrupt:
+		orchestrator.abort()
+		exit()
