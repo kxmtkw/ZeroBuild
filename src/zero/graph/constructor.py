@@ -14,6 +14,7 @@ from zero.interface.precomp_lib import PreCompiledLibrary
 
 from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
+from zero.utils.cache_manager import CacheManager
 
 
 class GraphConstructor:
@@ -34,6 +35,9 @@ class GraphConstructor:
 		self.static_lib_dir = config.directory.static_lib
 		self.shared_lib_dir = config.directory.shared_lib
 
+		self.cache: CacheManager = CacheManager(self.build_dir / "deps.cache")
+		
+		
 		self.include_dirs: list[Path] = []
 		
 
@@ -41,6 +45,8 @@ class GraphConstructor:
 
 		targets = []
 		compilers = {}
+
+		self.cache.load()
 
 		for t in build._targets:
 			self.current_compiler = t._compiler_object
@@ -52,6 +58,8 @@ class GraphConstructor:
 			targets,
 			compilers
 		)
+
+		self.cache.save()
 		
 		return root
 	
@@ -206,7 +214,14 @@ class GraphConstructor:
 		)
 		self.visited_headers[path] = header
 
-		deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+		cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
+
+		if cached_deps is None:
+			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+			self.cache.set(str(path), value=[str(d) for d in deps])
+		else:
+			deps = [Path(d) for d in cached_deps]
+
 		included_headers = [self.makeHeaderNode(d) for d in deps]
 
 		header.deps = included_headers
@@ -232,7 +247,14 @@ class GraphConstructor:
 
 		self.visited_sources[path] = source
 
-		deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+		cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
+		
+		if cached_deps is None:
+			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+			self.cache.set(str(path), value=[str(d) for d in deps])
+		else:
+			deps = [Path(d) for d in cached_deps]
+			
 		included_headers = [self.makeHeaderNode(d) for d in deps]
 
 		source.deps = included_headers
