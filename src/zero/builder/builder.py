@@ -1,4 +1,5 @@
 from zero.compilers.get import getCompilerName
+from zero.errors.errors import ZeroCompilationError
 from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
@@ -9,12 +10,15 @@ from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
 from zero.analyzers.stale_detector import isStale
 
+from .batch_executor import BatchExecutor
 
 class Builder(NodeVisitor):
 
 	def __init__(self, config: BuildConfig) -> None:
 
 		super().__init__()
+
+		self.batch_executor = BatchExecutor()
 
 		self.fresh_build = config.fresh_build
 
@@ -85,8 +89,7 @@ class Builder(NodeVisitor):
 		
 		self.current_target_arguments = node.arguments
 
-		for deps in node.sources:
-			self.visit(deps)
+		self.compileSources(node.sources)
 
 		self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
 		
@@ -118,8 +121,7 @@ class Builder(NodeVisitor):
 
 		self.current_target_arguments = node.arguments
 
-		for deps in node.sources:
-			self.visit(deps)
+		self.compileSources(node.sources)
 
 		self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
 		
@@ -158,8 +160,7 @@ class Builder(NodeVisitor):
 
 		self.current_target_arguments = node.arguments
 
-		for deps in node.sources:
-			self.visit(deps)
+		self.compileSources(node.sources)
 
 		self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
 
@@ -195,3 +196,17 @@ class Builder(NodeVisitor):
 	def visitHeaderNode(self, node: HeaderNode):
 		for deps in node.deps:
 			self.visit(deps)
+
+
+	def compileSources(self, sources: Sequence[SourceNode]):
+
+		for source in sources:
+			self.batch_executor.run(self.visitSourceNode, source)
+
+		futures = self.batch_executor.wait()
+
+		for future in futures:
+			try:
+				future.result()
+			except Exception as e:
+				raise ZeroCompilationError(type(e), str(e))
