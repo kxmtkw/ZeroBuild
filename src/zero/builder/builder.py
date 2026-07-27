@@ -1,5 +1,5 @@
 from zero.graph.nodes import *
-from zero.graph.nodes import SharedLibraryNode
+from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
 
 from zero.compilers import BaseCompiler
@@ -25,7 +25,9 @@ class Builder(NodeVisitor):
 
 		self.reporter = getReporter()
 
+		self.root: RootNode
 		self.current_compiler: BaseCompiler
+		self.compilers_stack: list[BaseCompiler] = []
 
 
 	def detectStaleness(self, node: Node) -> bool:
@@ -35,9 +37,25 @@ class Builder(NodeVisitor):
 			return isStale(node)
 
 
+	def visit(self, node: Node):
+
+		if isinstance(node, TargetNode):
+			self.compilers_stack.append(self.current_compiler)
+			self.current_compiler = self.root.target_compilers[node]
+
+			super().visit(node)
+
+			self.current_compiler = self.compilers_stack.pop()
+			return
+
+		super().visit(node)
+			
+
 	def visitRootNode(self, node: RootNode):
+
 		self.reporter.startPhase("Compilation", "Compiling")
 
+		self.root = node
 		for target in node.targets:
 			self.current_compiler = node.target_compilers[target]
 			self.visit(target)
@@ -46,6 +64,7 @@ class Builder(NodeVisitor):
 
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
+
 		if node in self.visited_nodes:
 			return
 		
@@ -76,6 +95,7 @@ class Builder(NodeVisitor):
 
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
+
 		if node in self.visited_nodes:
 			return
 		
@@ -118,6 +138,7 @@ class Builder(NodeVisitor):
 
 
 	def visitExecutableNode(self, node: ExecutableNode):
+		
 		if node in self.visited_nodes:
 			return
 		
