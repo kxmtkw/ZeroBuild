@@ -202,12 +202,9 @@ class Orchestrator:
 			build._targets = [executable]
 			self.make(build, config)
 		
-		executor = Executor()
+		executor = Executor(str(executable_path), args)
 
-		executor.run(
-			str(executable_path),
-			args
-		)
+		executor.run()
 		
 	def reportAndExit(self, error: str):
 		self.reporter.error(str(error))

@@ -22,6 +22,10 @@ class TerminalReporter:
 			TerminalReporter._instance = self
 
 
+	def print(self, *objects, end="\n"):
+		self._console.print(*objects, end=end)
+		
+
 	def startPhase(self, phase_name: str, phase_action: str):
 
 		if self._is_phase:
