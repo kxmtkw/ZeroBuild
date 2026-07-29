@@ -43,17 +43,17 @@ class GraphConstructor:
 		self.include_dirs: list[Path] = []
 		
 
-	def makeRoot(self, build: Build, specific_targets: list[Target] = []) -> RootNode:
+	def makeRoot(self, build: Build, all_targets: list[Target], specific_targets: list[Target] = []) -> RootNode:
 
 		targets = []
 		compilers = {}
 
-		for t in build._targets:
+		for t in all_targets:
 			self.current_compiler = t._compiler_object
 			node = self.makeTargetNode(t)
 			compilers[node] = self.current_compiler
 
-			if t in specific_targets and len(specific_targets) > 0:
+			if len(specific_targets) == 0 or t in specific_targets:
 				targets.append(node)
 
 		root = RootNode(

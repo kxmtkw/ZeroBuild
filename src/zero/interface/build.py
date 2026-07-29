@@ -17,7 +17,6 @@ class Build:
 
 
 	def __init__(self) -> None:
-		self._targets: list[Target] = []
 		self._directory: Path = Path("build")
 		self._compiler: CompilerType | None = None
 		self._compiler_object: BaseCompiler

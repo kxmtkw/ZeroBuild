@@ -5,34 +5,41 @@ import sys
 def add_make_command(subparsers: argparse._SubParsersAction) -> None:
 	make_parser = subparsers.add_parser(
 		"make",
-		help="Build targets",
+		help="Make the whole build or specific targets",
 	)
 	make_parser.add_argument(
 		"--fresh",
 		action="store_true",
-		help="Force a clean rebuild",
+		help="Force a clean rebuild.",
+	)
+	make_parser.add_argument(
+		"--threads",
+		type=int,
+		default=1,
+		metavar="COUNT",
+		help="Number of threads to use",
 	)
 	make_parser.add_argument(
 		"target",
 		nargs="*",
-		default=None,
-		help="Target to build",
+		default=[],
+		help="Target/s to build. If none specified, builds all.",
 	)
 
 
 def add_run_command(subparsers: argparse._SubParsersAction) -> None:
 	run_parser = subparsers.add_parser(
 		"run",
-		help="Run executables",
+		help="Run executables.",
 	)
 	run_parser.add_argument(
 		"--fresh",
 		action="store_true",
-		help="Force a rebuild before running",
+		help="Force a clean rebuild before running.",
 	)
 	run_parser.add_argument(
 		"executable",
-		help="Path or name of the executable",
+		help="Name of the executable.",
 	)
 	run_parser.add_argument(
 		"executable_args",

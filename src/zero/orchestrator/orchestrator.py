@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from zero.errors.errors import ZeroAPIError, ZeroError, ZeroCompilationError
+from zero.graph.printer import NodePrinter
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
 from zero.builder.builder import Builder
@@ -74,11 +75,11 @@ class Orchestrator:
 		module = self.loadConfigFile()
 		build = self.getBuild(module)
 		targets = self.getTargets(module)
+
 		needed_targets = []
 
 		# getting all targets
 		for target in targets:
-
 			# if specific targets is empty, we default to all targets.
 			if len(specific_targets) == 0:
 				break
@@ -105,12 +106,11 @@ class Orchestrator:
 
 		
 		try:
-			root = self.graph.makeRoot(build)
+			root = self.graph.makeRoot(build, targets, needed_targets)
 		except ZeroError as e:
 			self.reportAndExit(str(e))
 			
 		self.reporter.taskDone("Graph", "constructed")
-
 
 		# Detecting any cycles
 		cycle = CycleDetector()
@@ -131,7 +131,8 @@ class Orchestrator:
 			msg = "no need for compilation" if count == 0 else f"detected (count = {count})"
 			
 		self.reporter.taskDone("Staleness", msg)		
-		self.reporter.endPhase("Configuration complete.")
+		self.reporter.endPhase("Configuration complete.")	
+
 
 		try:
 			self.builder = Builder(config)
@@ -150,7 +151,7 @@ class Orchestrator:
 		
 		if build._compiler is None:
 			self.reportAndExit(f"No compiler provided for build.")
-		
+
 		try:
 			build._compiler_object = getCompiler(build._compiler)
 		except ValueError:
@@ -184,12 +185,11 @@ class Orchestrator:
 		return targets
 
 
-	def runExecutable(self, name: str, args: list[str], *, fresh: bool = False):
+	def runExecutable(self, name: str, args: list[str], *, fresh_build: bool = False):
 		
 		module = self.loadConfigFile()
 		build = self.getBuild(module)
 		targets = self.getTargets(module)
-		config = self.configureBuild(build.directory, fresh, 3)
 
 		executable: Executable | None = None
 
@@ -200,11 +200,13 @@ class Orchestrator:
 
 		if executable is None:
 			self.reportAndExit(f"Executable {name} not found.")
-		
+
+		# mock config to get the binary dir
+		config = self.configureBuild(build.directory, False, 1)
 		executable_path = config.directory.binary / name
 
-		if not executable_path.exists() or fresh:
-			self.make(specific_targets=[executable._name], fresh_build=fresh)
+		if not executable_path.exists() or fresh_build:
+			self.make(specific_targets=[executable._name], fresh_build=fresh_build)
 		
 		executor = Executor(str(executable_path), args)
 
