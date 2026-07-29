@@ -4,6 +4,7 @@ from zero.graph.nodes import *
 from zero.compilers import BaseCompiler
 
 
+from zero.interface.target import Target
 from zero.interface.build import Build
 from zero.interface.executable import Executable
 from zero.interface.source import Source
@@ -42,7 +43,7 @@ class GraphConstructor:
 		self.include_dirs: list[Path] = []
 		
 
-	def makeRoot(self, build: Build) -> RootNode:
+	def makeRoot(self, build: Build, specific_targets: list[Target] = []) -> RootNode:
 
 		targets = []
 		compilers = {}
@@ -50,8 +51,10 @@ class GraphConstructor:
 		for t in build._targets:
 			self.current_compiler = t._compiler_object
 			node = self.makeTargetNode(t)
-			targets.append(node)
 			compilers[node] = self.current_compiler
+
+			if t in specific_targets and len(specific_targets) > 0:
+				targets.append(node)
 
 		root = RootNode(
 			targets,

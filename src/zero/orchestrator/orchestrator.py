@@ -62,24 +62,57 @@ class Orchestrator:
 
 		return config
 
-	
-	def make(self, build: Build, config: BuildConfig):
+
+	def make(
+		self,
+		*,
+		specific_targets: list[str] = [],
+		fresh_build: bool = False,
+		threads: int = 1
+		):
+
+		module = self.loadConfigFile()
+		build = self.getBuild(module)
+		targets = self.getTargets(module)
+		needed_targets = []
+
+		# getting all targets
+		for target in targets:
+
+			# if specific targets is empty, we default to all targets.
+			if len(specific_targets) == 0:
+				break
+
+			if target._name in specific_targets:
+				specific_targets.remove(target._name)
+				needed_targets.append(target)
+
+		# exit if we do not find all specied targets
+		if len(specific_targets) > 0:
+			self.reportAndExit(f"Target{'s' if len(specific_targets) > 1 else ''} not found: {', '.join(specific_targets)}")
+				
 		
 		self.reporter.startPhase("Configuration", "Configuring")
+
+		config = self.configureBuild(build.directory, fresh_build, threads)
 			
 		self.reporter.taskDone("Directory", f"{str(build.directory)} chosen.")
-
 		self.reporter.taskDone("Threads", f"compiling with {config.threads} threads")
-		
+
+
+		# Making the DAG
 		self.graph = GraphConstructor(config)
 
+		
 		try:
 			root = self.graph.makeRoot(build)
 		except ZeroError as e:
 			self.reportAndExit(str(e))
-
+			
 		self.reporter.taskDone("Graph", "constructed")
 
+
+		# Detecting any cycles
 		cycle = CycleDetector()
 		
 		try:
@@ -89,16 +122,15 @@ class Orchestrator:
 
 		self.reporter.taskDone("Cycles", "none detected")
 
-		if not config.fresh_build:
+		if config.fresh_build:
+			msg = "skipped - fresh make"
+		else:
 			stale = StaleDetector(config)
 			stale.visit(root)
 			count = stale.getStaleCount()
 			msg = "no need for compilation" if count == 0 else f"detected (count = {count})"
-		else:
-			msg = "skipped - fresh make"
-		
-		self.reporter.taskDone("Staleness", msg)
-		
+			
+		self.reporter.taskDone("Staleness", msg)		
 		self.reporter.endPhase("Configuration complete.")
 
 		try:
@@ -152,41 +184,6 @@ class Orchestrator:
 		return targets
 
 
-	def makeBuild(self, *, fresh: bool = False):
-		module = self.loadConfigFile()
-		build = self.getBuild(module)
-		build._targets = self.getTargets(module)
-
-		config = self.configureBuild(build.directory, fresh, 3)
-
-		self.make(build, config)
-
-
-	def makeTargets(self, target_identifiers: list[str], *, fresh: bool = False):
-
-		module = self.loadConfigFile()
-		build = self.getBuild(module)
-		
-		needed_targets: list[Target] = []
-		targets: list[Target] = self.getTargets(module)
-
-		for target in targets:
-
-			if target._name in target_identifiers:
-				target_identifiers.remove(target._name)
-				needed_targets.append(target)
-
-
-		if len(target_identifiers) > 0:
-			self.reportAndExit(f"Target{'s' if len(target_identifiers) > 1 else ''} not found: {', '.join(target_identifiers)}")
-			
-		build._targets = needed_targets
-
-		config = self.configureBuild(build.directory, fresh, 3)
-
-		self.make(build, config)
-
-
 	def runExecutable(self, name: str, args: list[str], *, fresh: bool = False):
 		
 		module = self.loadConfigFile()
@@ -207,8 +204,7 @@ class Orchestrator:
 		executable_path = config.directory.binary / name
 
 		if not executable_path.exists() or fresh:
-			build._targets = [executable]
-			self.make(build, config)
+			self.make(specific_targets=[executable._name], fresh_build=fresh)
 		
 		executor = Executor(str(executable_path), args)
 

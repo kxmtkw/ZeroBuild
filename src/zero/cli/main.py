@@ -10,9 +10,9 @@ def runCli(orchestrator: Orchestrator):
 
 	if args.command == "make":
 		if len(args.target) == 0:
-			orchestrator.makeBuild(fresh=args.fresh)
+			orchestrator.make(fresh_build=args.fresh)
 		else:
-			orchestrator.makeTargets(args.target, fresh=args.fresh)
+			orchestrator.make(specific_targets=args.target, fresh_build=args.fresh)
 
 	elif args.command == "run":
 		orchestrator.runExecutable(args.executable, args.executable_args, fresh=args.fresh)
