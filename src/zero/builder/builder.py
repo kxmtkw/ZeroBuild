@@ -225,6 +225,8 @@ class Builder(NodeVisitor):
 		for deps in node.deps:
 			self.visit(deps)
 
+		error: Exception | None = None
+
 		try:
 			self.current_compiler.buildFile(
 				node.filepath, 
@@ -233,12 +235,15 @@ class Builder(NodeVisitor):
 				include_dirs=self.include_dirs, 
 				arguments=self.current_target_arguments
 			)
-		except ZeroCompilationError:
+		except ZeroCompilationError as e:
 			raise
 		except ZeroCompilationWarning as e:
-			raise
+			error = e
 
 		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
+
+		if error: raise error
+
 		self.visited_nodes.add(node)
 		
 
