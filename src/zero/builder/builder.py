@@ -1,5 +1,5 @@
 from zero.compilers.get import getCompilerName
-from zero.errors.errors import ZeroCompilationError
+from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
@@ -102,8 +102,13 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
-		self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
-		
+		try:
+			self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
+		except ZeroCompilationError:
+			raise
+		except ZeroCompilationWarning as e:
+			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
+
 		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
 
 		self.visited_nodes.add(node)
@@ -134,8 +139,13 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
-		self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
-		
+		try:
+			self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
+		except ZeroCompilationError:
+			raise
+		except ZeroCompilationWarning as e:
+			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
+
 		self.compiling_shared_lib = False
 
 		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
@@ -173,7 +183,12 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
-		self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
+		try:
+			self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
+		except ZeroCompilationError:
+			raise
+		except ZeroCompilationWarning as e:
+			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
 
 		self.reporter.taskDone("Link ", f"{node.targetpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
 
@@ -191,13 +206,19 @@ class Builder(NodeVisitor):
 		for deps in node.deps:
 			self.visit(deps)
 
-		self.current_compiler.buildFile(
-			node.filepath, 
-			node.outpath, 
-			for_shared=self.compiling_shared_lib, 
-			include_dirs=self.include_dirs, 
-			arguments=self.current_target_arguments
-		)
+		try:
+			self.current_compiler.buildFile(
+				node.filepath, 
+				node.outpath, 
+				for_shared=self.compiling_shared_lib, 
+				include_dirs=self.include_dirs, 
+				arguments=self.current_target_arguments
+			)
+		except ZeroCompilationError:
+			raise
+		except ZeroCompilationWarning as e:
+			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
+
 		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
 		
 		self.reporter.taskDone("Built", f"{node.filepath}")
@@ -221,5 +242,7 @@ class Builder(NodeVisitor):
 		for future in futures:
 			try:
 				future.result()
-			except Exception as e:
-				raise ZeroCompilationError(type(e), str(e))
+			except ZeroCompilationError:
+				raise
+			except ZeroCompilationWarning as e:
+				self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")

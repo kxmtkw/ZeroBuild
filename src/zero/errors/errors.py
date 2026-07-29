@@ -11,19 +11,35 @@ class ZeroError(Exception):
 
 class ZeroAPIError(ZeroError):
 	"""
-	Class for user errors related to the Zero Api. For example, source file not found or unknown compiler.
+	User errors related to the Zero API. For example, source file not found or unknown compiler.
 	"""
 
-	def __init__(self, exce: type[Exception], *args: object) -> None:
-		super().__init__(*args)
-		self.exce = exce
+	def __init__(self, error: str) -> None:
+		super().__init__(error)
+
+
+class ZeroCircularDependencyError(ZeroError):
+	"""
+	Circular dependency detected within the dependency graph.
+	"""
+
+	def __init__(self, error: str) -> None:
+		super().__init__(error)
 
 
 class ZeroCompilationError(ZeroError):
 	"""
-	Class for error during a compilation step.
+	Error during compilation.
 	"""
 
-	def __init__(self, exce: type[Exception], *args: object) -> None:
-		super().__init__(*args)
-		self.exce = exce
+	def __init__(self, error: str) -> None:
+		super().__init__(error)
+
+
+class ZeroCompilationWarning(ZeroError):
+	"""
+	Warnings during compilation. Should not halt compilation.
+	"""
+
+	def __init__(self, error: str) -> None:
+			super().__init__(error)

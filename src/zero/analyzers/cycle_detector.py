@@ -1,4 +1,4 @@
-from zero.errors.errors import ZeroError
+from zero.errors import ZeroCircularDependencyError
 from zero.graph.nodes import Node
 from zero.graph.visitor import NodeVisitor
 from zero.graph.nodes import *
@@ -37,7 +37,7 @@ class CycleDetector(NodeVisitor):
 	def visit(self, node: Node):
 		
 		if self.is_cycle_detected:
-			raise ZeroError(f"Cycle detected:\n{' -> '.join([repr(x) for x in self.cycle])}")
+			raise ZeroCircularDependencyError(f"{' -> '.join([repr(x) for x in self.cycle])}")
 		
 		return super().visit(node)
 	

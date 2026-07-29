@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zero.errors.errors import ZeroAPIError, ZeroError, ZeroCompilationError
+from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroError, ZeroCompilationError
 from zero.graph.printer import NodePrinter
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
@@ -117,7 +117,7 @@ class Orchestrator:
 		
 		try:
 			cycle.visit(root)
-		except ZeroError as e:
+		except ZeroCircularDependencyError as e:
 			self.reportAndExit(str(e))
 
 		self.reporter.taskDone("Cycles", "none detected")
