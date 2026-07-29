@@ -36,7 +36,7 @@ class GccCompiler(BaseCompiler):
 		)
 
 		if process.returncode != 0:
-			raise ZeroCompilationError(process.stderr)
+			raise ZeroCompilationError(str(filepath), process.stderr)
 		
 		return self._parseDependencies(process.stdout)
 
@@ -57,10 +57,10 @@ class GccCompiler(BaseCompiler):
 		)
 
 		if process.returncode != 0:
-			raise ZeroCompilationError(process.stderr)
+			raise ZeroCompilationError(str(filepath), process.stderr)
 
 		if len(process.stderr) > 0:
-			raise ZeroCompilationWarning(process.stderr)
+			raise ZeroCompilationWarning(str(filepath), process.stderr)
 
 		
 	def buildStaticLib(self, objects: list[Path], outfile: Path) -> None:  
@@ -74,10 +74,10 @@ class GccCompiler(BaseCompiler):
 		)
 
 		if process.returncode != 0:
-			raise ZeroCompilationError(process.stderr)
+			raise ZeroCompilationError(outfile.name, process.stderr)
 
 		if len(process.stderr) > 0:
-			raise ZeroCompilationWarning(process.stderr)
+			raise ZeroCompilationWarning(outfile.name, process.stderr)
 		
 
 	def buildSharedLib(self, objects: list[Path], libraries: list[Path], outfile: Path) -> None:  
@@ -99,10 +99,10 @@ class GccCompiler(BaseCompiler):
 		)
 
 		if process.returncode != 0:
-			raise ZeroCompilationError(process.stderr)
+			raise ZeroCompilationError(outfile.name, process.stderr)
 
 		if len(process.stderr) > 0:
-			raise ZeroCompilationWarning(process.stderr)
+			raise ZeroCompilationWarning(outfile.name, process.stderr)
 
 
 	def buildExecutable(self, objects: list[Path], libraries: list[Path], outfile: Path) -> None:  
@@ -117,7 +117,7 @@ class GccCompiler(BaseCompiler):
 		)
 
 		if process.returncode != 0:
-			raise ZeroCompilationError(process.stderr)
+			raise ZeroCompilationError(outfile.name, process.stderr)
 
 		if len(process.stderr) > 0:
-			raise ZeroCompilationWarning(process.stderr)
+			raise ZeroCompilationWarning(outfile.name, process.stderr)

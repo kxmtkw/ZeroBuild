@@ -97,8 +97,8 @@ class Orchestrator:
 
 		config = self.configureBuild(build.directory, fresh_build, threads)
 			
-		self.reporter.taskDone("Directory", f"{str(build.directory)} chosen.")
-		self.reporter.taskDone("Threads", f"compiling with {config.threads} threads")
+		self.reporter.info("Directory", f"{str(build.directory)} chosen.")
+		self.reporter.info("Threads", f"compiling with {config.threads} threads")
 
 
 		# Making the DAG
@@ -110,7 +110,7 @@ class Orchestrator:
 		except ZeroError as e:
 			self.reportAndExit(str(e))
 			
-		self.reporter.taskDone("Graph", "constructed")
+		self.reporter.info("Graph", "constructed")
 
 		# Detecting any cycles
 		cycle = CycleDetector()
@@ -120,7 +120,7 @@ class Orchestrator:
 		except ZeroCircularDependencyError as e:
 			self.reportAndExit(str(e))
 
-		self.reporter.taskDone("Cycles", "none detected")
+		self.reporter.info("Cycles", "none detected")
 
 		if config.fresh_build:
 			msg = "skipped - fresh make"
@@ -130,7 +130,7 @@ class Orchestrator:
 			count = stale.getStaleCount()
 			msg = "no need for compilation" if count == 0 else f"detected (count = {count})"
 			
-		self.reporter.taskDone("Staleness", msg)		
+		self.reporter.info("Staleness", msg)		
 		self.reporter.endPhase("Configuration complete.")	
 
 

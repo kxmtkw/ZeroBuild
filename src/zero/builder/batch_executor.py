@@ -14,13 +14,14 @@ class BatchExecutor:
 		return ThreadPoolExecutor(self._max_workers)
 
 
-	def run(self, func: Callable, *args: Any):
+	def run(self, func: Callable, *args: Any) -> Future:
 
 		if not self._executor:
 			self._executor = self.new()
 		
 		future = self._executor.submit(func, *args)
 		self._futures.append(future)
+		return future
 
 
 	def wait(self) -> list[Future]:

@@ -32,8 +32,10 @@ class ZeroCompilationError(ZeroError):
 	Error during compilation.
 	"""
 
-	def __init__(self, error: str) -> None:
+	def __init__(self, cause: str, error: str) -> None:
 		super().__init__(error)
+		self.cause = cause
+		self.error = error
 
 
 class ZeroCompilationWarning(ZeroError):
@@ -41,5 +43,7 @@ class ZeroCompilationWarning(ZeroError):
 	Warnings during compilation. Should not halt compilation.
 	"""
 
-	def __init__(self, error: str) -> None:
+	def __init__(self, cause: str, error: str) -> None:
 			super().__init__(error)
+			self.cause = cause
+			self.error = error

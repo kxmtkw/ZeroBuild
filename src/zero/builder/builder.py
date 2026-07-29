@@ -70,9 +70,16 @@ class Builder(NodeVisitor):
 		self.reporter.startPhase("Compilation", "Compiling")
 
 		self.root = node
+
 		for target in node.targets:
 			self.current_compiler = node.target_compilers[target]
-			self.visit(target)
+
+			try:
+				self.visit(target)
+			except ZeroCompilationError as e:
+				self.reportError(e.cause, str(e))
+				self.reporter.endPhase("Build failed.")
+				return
 
 		self.old_mtime_cache.save()
 
@@ -102,14 +109,18 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
+		title = "Link"
+		msg = f"{node.libpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+
 		try:
 			self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
+			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
+			self.reporter.info(title, msg, "bold red")
 			raise
 		except ZeroCompilationWarning as e:
-			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
-
-		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
+			self.reporter.info(title, msg, "bold yellow")
+			self.reportWarning(e.cause, str(e))
 
 		self.visited_nodes.add(node)
 
@@ -139,16 +150,20 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
+		title = "Link"
+		msg = f"{node.libpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+
 		try:
 			self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
+			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
+			self.reporter.info(title, msg, "bold red")
 			raise
 		except ZeroCompilationWarning as e:
-			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
-
-		self.compiling_shared_lib = False
-
-		self.reporter.taskDone("Link ", f"{node.libpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
+			self.reporter.info(title, msg, "bold yellow")
+			self.reportWarning(e.cause, str(e))
+		finally:
+			self.compiling_shared_lib = False
 
 		self.visited_nodes.add(node)
 	
@@ -158,7 +173,7 @@ class Builder(NodeVisitor):
 		if not node.libpath.exists():
 			raise RuntimeError(f"Could not find pre-compiled library: {node.libpath}")
 		
-		self.reporter.taskDone("Found", f"{node.libpath}")
+		self.reporter.info("Found", f"{node.libpath}")
 
 
 	def visitExecutableNode(self, node: ExecutableNode):
@@ -183,14 +198,18 @@ class Builder(NodeVisitor):
 
 		self.compileSources(node.sources)
 
+		title = "Link"
+		msg = f"{node.targetpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+
 		try:
 			self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
+			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
+			self.reporter.info(title, msg, "bold red")
 			raise
 		except ZeroCompilationWarning as e:
-			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
-
-		self.reporter.taskDone("Link ", f"{node.targetpath.name} [bold yellow]via {getCompilerName(self.current_compiler)}[/bold yellow]")
+			self.reporter.info(title, msg, "bold yellow")
+			self.reportWarning(e.cause, str(e))
 
 		self.visited_nodes.add(node)
 
@@ -217,12 +236,9 @@ class Builder(NodeVisitor):
 		except ZeroCompilationError:
 			raise
 		except ZeroCompilationWarning as e:
-			self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
+			raise
 
 		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
-		
-		self.reporter.taskDone("Built", f"{node.filepath}")
-
 		self.visited_nodes.add(node)
 		
 
@@ -234,15 +250,33 @@ class Builder(NodeVisitor):
 
 	def compileSources(self, sources: Sequence[SourceNode]):
 
-		for source in sources:
-			self.batch_executor.run(self.visitSourceNode, source)
+		future_map = {
+			self.batch_executor.run(self.visitSourceNode, source): source for source in sources
+		}
 
 		futures = self.batch_executor.wait()
-
+		
 		for future in futures:
+
+			node = future_map[future]
+
+			info = "Built"
+			msg = str(node.filepath)
+
 			try:
 				future.result()
+				self.reporter.info(info, msg)
 			except ZeroCompilationError:
+				self.reporter.info(info, msg, "bold red")
 				raise
 			except ZeroCompilationWarning as e:
-				self.reporter.print(f"[bold yellow]{str(e)}[/bold yellow]")
+				self.reporter.info(info, msg, "bold yellow")
+				self.reportWarning(e.cause, str(e))
+
+
+	def reportWarning(self, title: str, details: str):
+		self.reporter.box(details, color="yellow", title=title)
+
+
+	def reportError(self, title: str, details: str):
+		self.reporter.box(details, color="red", title=title)

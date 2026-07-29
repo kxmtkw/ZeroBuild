@@ -1,6 +1,6 @@
 from rich.console import Console
 from rich.status import Status
-
+from rich.panel import Panel
 
 class TerminalReporter:
 	"""
@@ -51,11 +51,11 @@ class TerminalReporter:
 		self._is_phase = False
 
 	
-	def taskDone(self, task: str, msg: str):
+	def info(self, title: str, msg: str, color: str = "bold green"):
 		if self._is_phase:
-			self._console.print(f"    [blue]│[/blue][bold green] {task:<16}[/bold green] {msg} ")
+			self._console.print(f"    [blue]│[/blue] [{color}]{title:<16}[/{color}] {msg} ")
 		else:
-			self._console.print(f"[bold green]{task:<16}[/bold green] {msg} ")
+			self._console.print(f"[{color}]{title:<16}[/{color}] {msg} ")
 
 
 	def error(self, msg: str):
@@ -63,5 +63,15 @@ class TerminalReporter:
 		if self._is_phase:
 			self.endPhase("Failed")
 
-		self._console.print(f"[bold red]Error: {msg} [/bold red]")
-	
+		self._console.print(Panel(msg, title="Error"))
+
+
+	def box(self, msg: str, *, title: str | None = None, color: str = ""):
+
+		if self._is_phase:
+			self._console.print(f"    [blue]│[/blue]")
+
+		self._console.print(Panel(f"[{color}]{msg.strip()}[/{color}]", title=title, border_style=color, padding=(1,2), expand=False))
+
+		if self._is_phase:
+			self._console.print(f"    [blue]│[/blue]")
