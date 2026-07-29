@@ -32,12 +32,12 @@ class CycleDetector(NodeVisitor):
 				break
 
 		self.cycle = cycle
-	
+
 
 	def visit(self, node: Node):
 		
 		if self.is_cycle_detected:
-			raise ZeroCircularDependencyError(f"{' -> '.join([repr(x) for x in self.cycle])}")
+			return
 		
 		return super().visit(node)
 	
@@ -51,6 +51,9 @@ class CycleDetector(NodeVisitor):
 
 		for t in node.targets:
 			self.visit(t)
+
+		if self.is_cycle_detected:
+			raise ZeroCircularDependencyError(f"{' -> '.join([repr(x) for x in self.cycle])}")
 
 		self.tracked_nodes.pop()
 

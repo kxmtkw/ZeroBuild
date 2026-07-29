@@ -30,14 +30,14 @@ class Orchestrator:
 	def loadConfigFile(self) -> ModuleLoader:
 
 		if not self.config_file.exists():
-			raise ZeroError(f"Config file '{str(self.config_file)}' not found.")
+			self.reportAndExit("Misconfigured Build File", f"Config file '{str(self.config_file)}' not found.")
 		
 		try:
 			module = ModuleLoader(self.config_file)
 		except ZeroAPIError as e:
-			self.reportAndExit(str(e))
+			self.reportAndExit("Misconfigured Build File", str(e))
 		except Exception as e:
-			self.reportAndExit(f"[{e.__class__.__name__}] {str(e)}")
+			self.reportAndExit("Unexpected Error", f"[{e.__class__.__name__}] {str(e)}")
 
 		
 		return module
@@ -90,7 +90,7 @@ class Orchestrator:
 
 		# exit if we do not find all specied targets
 		if len(specific_targets) > 0:
-			self.reportAndExit(f"Target{'s' if len(specific_targets) > 1 else ''} not found: {', '.join(specific_targets)}")
+			self.reportAndExit("Misconfigured Build File", f"Target{'s' if len(specific_targets) > 1 else ''} not found: {', '.join(specific_targets)}")
 				
 		
 		self.reporter.startPhase("Configuration", "Configuring")
@@ -107,8 +107,8 @@ class Orchestrator:
 		
 		try:
 			root = self.graph.makeRoot(build, targets, needed_targets)
-		except ZeroError as e:
-			self.reportAndExit(str(e))
+		except Exception as e:
+			self.reportAndExit("Unexpected Error", str(e))
 			
 		self.reporter.info("Graph", "constructed")
 
@@ -118,7 +118,9 @@ class Orchestrator:
 		try:
 			cycle.visit(root)
 		except ZeroCircularDependencyError as e:
-			self.reportAndExit(str(e))
+			self.reportAndExit("Circular Dependency Detected", str(e))
+		except Exception as e:
+			self.reportAndExit("Unexpected Error", str(e))
 
 		self.reporter.info("Cycles", "none detected")
 
@@ -136,8 +138,8 @@ class Orchestrator:
 
 		try:
 			self.builder = Builder(config)
-		except ZeroCompilationError as e:
-			self.reportAndExit(str(e))
+		except Exception as e:
+			self.reportAndExit("Unexpected Error", str(e))
 
 		self.builder.visit(root)
 
@@ -147,15 +149,15 @@ class Orchestrator:
 		build = module.getAttribute("build")
 
 		if not isinstance(build, Build):
-			self.reportAndExit(f"Attribute 'build' not found or is not an instance of Build.")
+			self.reportAndExit("Misconfigured Build File", f"Attribute 'build' not found or is not an instance of Build.")
 		
 		if build._compiler is None:
-			self.reportAndExit(f"No compiler provided for build.")
+			self.reportAndExit("Misconfigured Build File", f"No compiler provided for build.")
 
 		try:
 			build._compiler_object = getCompiler(build._compiler)
 		except ValueError:
-			self.reportAndExit(f"Unknown compiler: {build._compiler}")
+			self.reportAndExit("Misconfigured Build File", f"Unknown compiler: {build._compiler}")
 		
 		return build
 
@@ -177,7 +179,7 @@ class Orchestrator:
 			try:
 				value._compiler_object = build._compiler_object if value._compiler == "inherit" else getCompiler(value._compiler)
 			except ValueError:
-				self.reportAndExit(f"Unknown compiler: {value._compiler}")
+				self.reportAndExit("Misconfigured Build File", f"Unknown compiler: {value._compiler}")
 			
 			targets.append(value)
 
@@ -199,7 +201,7 @@ class Orchestrator:
 				break
 
 		if executable is None:
-			self.reportAndExit(f"Executable {name} not found.")
+			self.reportAndExit("Misconfigured Build File", f"Executable {name} not found.")
 
 		# mock config to get the binary dir
 		config = self.configureBuild(build.directory, False, 1)
@@ -220,8 +222,9 @@ class Orchestrator:
 		self.reporter.endPhase("User Aborted")
 
 
-	def reportAndExit(self, error: str):
-		self.reporter.error(str(error))
+	def reportAndExit(self, title: str, error: str):
+		self.reporter.box(str(error), title=title, color="red")
+		self.reporter.endPhase("Failed.")
 		exit(1)
 
 
