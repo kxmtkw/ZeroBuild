@@ -38,6 +38,7 @@ class Orchestrator:
 			self.reportAndExit("Misconfigured Build File", str(e))
 		except Exception as e:
 			self.reportAndExit("Unexpected Error", f"[{e.__class__.__name__}] {str(e)}")
+			raise e
 
 		
 		return module
@@ -108,7 +109,7 @@ class Orchestrator:
 		try:
 			root = self.graph.makeRoot(build, targets, needed_targets)
 		except Exception as e:
-			self.reportAndExit("Unexpected Error", str(e))
+			self.reportError(e)
 			
 		self.reporter.info("Graph", "constructed")
 
@@ -120,7 +121,7 @@ class Orchestrator:
 		except ZeroCircularDependencyError as e:
 			self.reportAndExit("Circular Dependency Detected", str(e))
 		except Exception as e:
-			self.reportAndExit("Unexpected Error", str(e))
+			self.reportError(e)
 
 		self.reporter.info("Cycles", "none detected")
 
@@ -139,7 +140,7 @@ class Orchestrator:
 		try:
 			self.builder = Builder(config)
 		except Exception as e:
-			self.reportAndExit("Unexpected Error", str(e))
+			self.reportError(e)
 
 		self.builder.visit(root)
 
@@ -220,6 +221,12 @@ class Orchestrator:
 			self.builder.halt()
 			
 		self.reporter.endPhase("User Aborted")
+
+
+	def reportError(self, exc: Exception):
+		self.reporter.box(str(exc), title="Unexpected Error", color="red")
+		self.reporter.endPhase("Failed.")
+		raise exc		
 
 
 	def reportAndExit(self, title: str, error: str):
