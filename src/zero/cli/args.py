@@ -3,23 +3,23 @@ import sys
 
 
 def add_make_command(subparsers: argparse._SubParsersAction) -> None:
-	make_parser = subparsers.add_parser(
+	parser = subparsers.add_parser(
 		"make",
 		help="Make the whole build or specific targets",
 	)
-	make_parser.add_argument(
+	parser.add_argument(
 		"--fresh",
 		action="store_true",
 		help="Force a clean rebuild.",
 	)
-	make_parser.add_argument(
+	parser.add_argument(
 		"--threads",
 		type=int,
 		default=1,
-		metavar="COUNT",
+		metavar="count",
 		help="Number of threads to use",
 	)
-	make_parser.add_argument(
+	parser.add_argument(
 		"target",
 		nargs="*",
 		default=[],
@@ -28,32 +28,41 @@ def add_make_command(subparsers: argparse._SubParsersAction) -> None:
 
 
 def add_run_command(subparsers: argparse._SubParsersAction) -> None:
-	run_parser = subparsers.add_parser(
+	parser = subparsers.add_parser(
 		"run",
-		help="Run executables.",
+		help="Run executables built by zero.",
 	)
-	run_parser.add_argument(
+	parser.add_argument(
 		"--fresh",
 		action="store_true",
 		help="Force a clean rebuild before running.",
 	)
-	run_parser.add_argument(
+	parser.add_argument(
 		"executable",
 		help="Name of the executable.",
 	)
-	run_parser.add_argument(
+	parser.add_argument(
 		"executable_args",
 		nargs=argparse.REMAINDER,
 		help="Arguments passed directly to the executable",
 	)
 
 
+def add_clear_cache_command(subparsers: argparse._SubParsersAction) -> None:
+	parser = subparsers.add_parser(
+		"clear-cache",
+		help="Clear the build cache.",
+	)
+
+
+
 def setupParser() -> argparse.ArgumentParser:
-	parser = argparse.ArgumentParser(prog="zero", description="Zero build system")
+	parser = argparse.ArgumentParser(prog="zero", description="Zero Build System")
 	subparsers = parser.add_subparsers(dest="command", required=True)
 
 	add_make_command(subparsers)
 	add_run_command(subparsers)
+	add_clear_cache_command(subparsers)
 
 	return parser
 

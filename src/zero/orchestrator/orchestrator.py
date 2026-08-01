@@ -1,5 +1,7 @@
-from pathlib import Path
 import traceback
+import shutil
+
+from pathlib import Path
 
 from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroError, ZeroCompilationError
 from zero.errors.errors import ZeroHeaderNotFoundError, ZeroSourceNotFoundError
@@ -216,6 +218,17 @@ class Orchestrator:
 		executor.run()
 
 
+	def clearCache(self):
+		module = self.loadConfigFile()
+		build = self.getBuild(module)
+
+		if build.directory.exists():
+			shutil.rmtree(build.directory)
+			self.reporter.info("Clearing Cache", f"Cleared {str(build.directory)}")
+		else:
+			self.reporter.info("Clearing Cache", f"No cache found at {str(build.directory)} - Already Cleared")
+
+		
 	def abort(self):
 		if self.builder: 
 			self.builder.halt()
