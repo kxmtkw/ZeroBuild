@@ -23,7 +23,7 @@ def FileGlob(directory: PathType, pattern: str | None = None):
 		directory = Path(directory)
 
 	if not directory.is_dir():
-		raise ZeroAPIError(NotADirectoryError, f"{str(directory)} is not a directory.")
+		raise ZeroAPIError(f"{str(directory)} is not a directory.")
 
 	files: list[Path] = []
 

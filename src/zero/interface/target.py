@@ -1,4 +1,6 @@
 
+from zero.compilers.get import getCompiler
+from zero.compilers.get import getCompiler
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 from zero.interface.source import Source
@@ -6,6 +8,7 @@ from zero.interface.library import Library
 
 from zero.compilers.base import BaseCompiler
 
+from zero.interface.build import Build
 
 class Target:
 	"""
@@ -23,6 +26,24 @@ class Target:
 		self._compiler_object: BaseCompiler
 
 
+	def _validate(self, build: Build) -> None:
+		
+		if not hasattr(self, "_source"):
+			raise ZeroAPIError(f"Source has not been specified for target [bold]{getattr(self, "_name", "unknown")}[/bold].")
+
+		try:	
+			self._compiler_object = build._compiler_object if self._compiler == "inherit" else getCompiler(self._compiler)
+		except ValueError:
+			raise ZeroAPIError(f"Unknown compiler specified for target [bold]{getattr(self, '_name', 'unknown')}[/bold]: '{self._compiler}'")
+
+		if not self._compiler_object.doesExist():
+			raise ZeroAPIError(f"Compiler '{self._compiler}' not found in PATH for target [bold]{getattr(self, '_name', 'unknown')}[/bold]'.")
+
+		for lib in self._linked_libs:
+			if not isinstance(lib, Library):
+				raise ZeroAPIError(f"Linked library '{lib}' is not an instance of Library for target [bold]{getattr(self, '_name', 'unknown')}[/bold].")
+		
+
 	@property
 	def name(self):
 		"""
@@ -30,24 +51,20 @@ class Target:
 		Cannot be accessed if not manually assigned.
 		"""
 		if not hasattr(self, "_name"):
-			raise ZeroAPIError(ValueError, "Name has not been specified for this target yet.")
+			raise ZeroAPIError("Name has not been specified for this target yet.")
 		return self._name
 	
 
 	@name.setter
 	def name(self, name: str):
 		if name == "":
-			raise ZeroAPIError(ValueError, "Target name cannot be an empty string.")
+			raise ZeroAPIError("Target name cannot be an empty string.")
 		self._name = name
 
 
 	@property
 	def source(self):
 		"Specify the source files for the executable. Can only be set once."	
-
-		if not hasattr(self, "_source"):
-			raise ZeroAPIError(ValueError, "Source not specified for this target.")
-			
 		return self._source
 	
 
@@ -83,6 +100,7 @@ class Target:
 	def link(self, library: Library):
 		"Link a library to this target."
 		self._linked_libs.append(library)
+
 
 	@property
 	def linkedLibs(self):

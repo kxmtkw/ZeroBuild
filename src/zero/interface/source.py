@@ -19,9 +19,9 @@ class Source:
 			elif isinstance(f, Path):
 				p = f
 			else:
-				raise ZeroAPIError(TypeError, f"Expected str or Path object. Got {type(f)}")
+				raise ZeroAPIError(f"Expected str or Path object. Got {type(f)}")
 
 			if not p.exists():
-				raise ZeroAPIError(FileNotFoundError, f"Source file not found: {str(p)}")
+				raise ZeroAPIError(f"Source file not found: {str(p)}")
 			
 			self._sources_paths.append(p)

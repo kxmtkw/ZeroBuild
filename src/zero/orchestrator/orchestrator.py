@@ -75,6 +75,8 @@ class Orchestrator:
 		threads: int = 1
 		):
 
+		self.reporter.startPhase("Configuration", "Configuring")
+
 		module = self.loadConfigFile()
 		build = self.getBuild(module)
 		targets = self.getTargets(module)
@@ -91,12 +93,10 @@ class Orchestrator:
 				specific_targets.remove(target._name)
 				needed_targets.append(target)
 
+
 		# exit if we do not find all specied targets
 		if len(specific_targets) > 0:
 			self.reportAndExit("Misconfigured Build File", f"Target{'s' if len(specific_targets) > 1 else ''} not found: {', '.join(specific_targets)}")
-				
-		
-		self.reporter.startPhase("Configuration", "Configuring")
 
 		config = self.configureBuild(build.directory, fresh_build, threads)
 			
@@ -156,13 +156,10 @@ class Orchestrator:
 		if not isinstance(build, Build):
 			self.reportAndExit("Misconfigured Build File", f"Attribute 'build' not found or is not an instance of Build.")
 		
-		if build._compiler is None:
-			self.reportAndExit("Misconfigured Build File", f"No compiler provided for build.")
-
 		try:
-			build._compiler_object = getCompiler(build._compiler)
-		except ValueError:
-			self.reportAndExit("Misconfigured Build File", f"Unknown compiler: {build._compiler}")
+			build._validate()
+		except ZeroAPIError as e:
+			self.reportAndExit("Misconfigured Build File", str(e))
 		
 		return build
 
@@ -182,12 +179,11 @@ class Orchestrator:
 				value._name = name
 
 			try:
-				value._compiler_object = build._compiler_object if value._compiler == "inherit" else getCompiler(value._compiler)
-			except ValueError:
-				self.reportAndExit("Misconfigured Build File", f"Unknown compiler: {value._compiler}")
-			
-			targets.append(value)
+				value._validate(build)
+			except ZeroAPIError as e:
+				self.reportAndExit("Misconfigured Build File", str(e))
 
+			targets.append(value)
 
 		return targets
 
