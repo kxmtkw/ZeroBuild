@@ -1,3 +1,4 @@
+import cmd
 from pathlib import Path
 import subprocess
 from zero.errors import ZeroCompilationError, ZeroCompilationWarning
@@ -53,7 +54,8 @@ class GccCompiler(BaseCompiler):
 		process = subprocess.run(
 			cmd,
 			capture_output=True, 
-			text=True
+			text=True,
+			errors="replace"
 		)
 
 		if process.returncode != 0:
@@ -67,10 +69,16 @@ class GccCompiler(BaseCompiler):
 		
 		str_objects = [str(obj) for obj in objects]
 
+		if outfile.exists():
+			outfile.unlink()
+
+		cmd = ["ar", "rcs", str(outfile), *str_objects]
+
 		process = subprocess.run(
-			["ar", "rcs", str(outfile), *str_objects], 
+			cmd, 
 			capture_output=True, 
-			text=True
+			text=True,
+			errors="replace"
 		)
 
 		if process.returncode != 0:
@@ -83,19 +91,22 @@ class GccCompiler(BaseCompiler):
 	def buildSharedLib(self, objects: list[Path], libraries: list[Path], outfile: Path) -> None:  
 		
 		str_objects = [str(obj) for obj in objects]
-		
+
+		if outfile.exists():
+			outfile.unlink()
+
 		cmd = [self.binary, "-shared", "-o", str(outfile), *str_objects]
-		
-		if libraries:
+
+		for lib in libraries:
 			cmd.append("-Wl,--whole-archive")
-			for lib in libraries:
-				cmd.append(str(lib))
+			cmd.append(str(lib))
 			cmd.append("-Wl,--no-whole-archive")
 
 		process = subprocess.run(
 			cmd, 
 			capture_output=True, 
-			text=True
+			text=True,
+			errors="replace"
 		)
 
 		if process.returncode != 0:
@@ -113,7 +124,8 @@ class GccCompiler(BaseCompiler):
 		process = subprocess.run(
 			[self.binary, *str_objects, *str_libs, "-o", str(outfile)], 
 			capture_output=True, 
-			text=True
+			text=True,
+			errors="replace"
 		)
 
 		if process.returncode != 0:
