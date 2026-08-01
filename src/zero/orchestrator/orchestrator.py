@@ -1,4 +1,5 @@
 from pathlib import Path
+import traceback
 
 from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroError, ZeroCompilationError
 from zero.graph.printer import NodePrinter
@@ -224,9 +225,10 @@ class Orchestrator:
 
 
 	def reportError(self, exc: Exception):
-		self.reporter.box(str(exc), title="Unexpected Error", color="red")
+		traceback_str = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+		self.reporter.box(traceback_str, title=f"Unexpected {type(exc).__name__}", color="red")
 		self.reporter.endPhase("Failed.")
-		raise exc		
+		exit(1)
 
 
 	def reportAndExit(self, title: str, error: str):

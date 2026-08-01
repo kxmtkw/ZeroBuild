@@ -7,11 +7,32 @@ class ZeroError(Exception):
 	"""
 	def __init__(self, *args: object) -> None:
 		super().__init__(*args)
+
+	def traceback(self) -> str:
+		return ''.join(traceback.format_exception(type(self), self, self.__traceback__))
 			
 
 class ZeroAPIError(ZeroError):
 	"""
 	User errors related to the Zero API. For example, source file not found or unknown compiler.
+	"""
+
+	def __init__(self, error: str) -> None:
+		super().__init__(error)
+
+
+class ZeroSourceNotFoundError(ZeroError):
+	"""
+	Source file not found.
+	"""
+
+	def __init__(self, error: str) -> None:
+		super().__init__(error)
+
+
+class ZeroHeaderNotFoundError(ZeroError):
+	"""
+	Header file not found.
 	"""
 
 	def __init__(self, error: str) -> None:
