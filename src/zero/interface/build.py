@@ -18,6 +18,7 @@ class Build:
 		self._directory: Path = Path("build")
 		self._compiler: CompilerType | None = None
 		self._compiler_object: BaseCompiler
+		self._arguments: list[str] = []
 
 
 	def _validate(self) -> None:
@@ -58,3 +59,20 @@ class Build:
 	@directory.setter
 	def directory(self, name: str | Path):
 		self._directory = Path(name)
+
+
+	@property
+	def arguments(self):
+		"""
+		Global arguments to be passed to the compiler for all targets in the build system.
+		Not recommended if the build system has multiple languages or uses multiple compilers.
+		"""
+		return self._arguments
+
+
+	@arguments.setter
+	def arguments(self, args: tuple[str, ...] | str):
+		if isinstance(args, (tuple)):
+			self._arguments = [arg for arg in args]
+		else:
+			self._arguments = [args]

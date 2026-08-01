@@ -42,6 +42,8 @@ class Target:
 		for lib in self._linked_libs:
 			if not isinstance(lib, Library):
 				raise ZeroAPIError(f"Linked library '{lib}' is not an instance of Library for target [bold]{getattr(self, '_name', 'unknown')}[/bold].")
+
+		self._arguments = build._arguments + self._arguments
 		
 
 	@property
@@ -64,7 +66,7 @@ class Target:
 
 	@property
 	def source(self):
-		"Specify the source files for the executable. Can only be set once."	
+		"Specify the source files for the executable."	
 		return self._source
 	
 
@@ -75,6 +77,7 @@ class Target:
 	
 	@property
 	def arguments(self):
+		"Arguments to be passed to the target at runtime."
 		return self._arguments
 	
 	
