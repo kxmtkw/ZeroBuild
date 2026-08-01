@@ -5,36 +5,43 @@ from typing import Any
 
 class CacheManager:
 
+	_cache: dict[Path, dict[str, Any]] = {}
 
 	def __init__(self, filepath: Path) -> None:
 		self._filepath = filepath
-		self._data: dict[str, Any] = {}
 
-		self.load()
+		if filepath in CacheManager._cache:
+			self._data = CacheManager._cache[filepath]
+		else:
+			self._data = self.load()
+			CacheManager._cache[filepath] = self._data
 
 
-	def load(self) -> bool:
-
+	def load(self) -> dict[str, Any]:
+		
 		if not self._filepath.exists():
 			self._filepath.parent.mkdir(parents=True, exist_ok=True)
 			self._filepath.touch()
-			self._data = {}
-			return False
+			return {}
 
 		try:
 			with open(self._filepath) as file:
-				self._data = json.load(file)
-				if not isinstance(self._data, dict):
-					self._data = {}
-					return False
+				data = json.load(file)
+				if not isinstance(data, dict):
+					return {}
+				return data
 		except (json.JSONDecodeError, IsADirectoryError):
-			self._data = {}
-			return False
+			return {}
 
-		return True
 
+	def reload(self):
+		
+		self._data = self.load()
+		CacheManager._cache[self._filepath] = self._data
+
+		
 	def save(self) -> bool:
-		"""Writes current cache data to the JSON file safely using atomic replacement."""
+
 		try:
 			self._filepath.parent.mkdir(parents=True, exist_ok=True)
 			
@@ -45,6 +52,7 @@ class CacheManager:
 		
 		except (OSError, TypeError, ValueError):
 			return False
+
 
 	def get(
 		self,
