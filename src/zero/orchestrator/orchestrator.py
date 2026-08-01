@@ -2,6 +2,7 @@ from pathlib import Path
 import traceback
 
 from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroError, ZeroCompilationError
+from zero.errors.errors import ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.printer import NodePrinter
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
@@ -109,6 +110,8 @@ class Orchestrator:
 		
 		try:
 			root = self.graph.makeRoot(build, targets, needed_targets)
+		except (ZeroHeaderNotFoundError, ZeroSourceNotFoundError) as e:
+			self.reportAndExit("File Not Found", str(e))
 		except Exception as e:
 			self.reportError(e)
 			

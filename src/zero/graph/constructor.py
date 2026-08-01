@@ -1,5 +1,6 @@
 from zero.compilers.get import getCompiler
 from zero.compilers.types import CompilerType
+from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.nodes import *
 from zero.compilers import BaseCompiler
 
@@ -210,11 +211,15 @@ class GraphConstructor:
 
 		if path in self.visited_headers:
 			return self.visited_headers[path]
+
+		if not path.exists():
+			raise ZeroHeaderNotFoundError(f"Header file '{str(path)}' not found")
 		
 		header = HeaderNode(
 			path,
 			[]
 		)
+
 		self.visited_headers[path] = header
 
 		# 0 because if the old mtime cache does not exist, new_mtime will always be greater than 0
@@ -233,8 +238,11 @@ class GraphConstructor:
 		else:
 			deps = [Path(d) for d in cached_deps]
 
-		included_headers = [self.makeHeaderNode(d) for d in deps]
-
+		try:
+			included_headers = [self.makeHeaderNode(d) for d in deps]
+		except ZeroHeaderNotFoundError as e:
+			raise ZeroHeaderNotFoundError(str(e) + f"\n -- while processing header file '{str(path)}'")
+		
 		header.deps = included_headers
 		
 		return header
@@ -244,6 +252,10 @@ class GraphConstructor:
 
 		if path in self.visited_sources:
 			return self.visited_sources[path]
+
+		if not path.exists():
+			# this almost will never be raised because the interface object Source will check, but just in case
+			raise ZeroSourceNotFoundError(f"Source file '{str(path)}' not found")
 		
 		outfile = self.object_dir / path.parent / (path.name + ".o")
 
@@ -268,12 +280,20 @@ class GraphConstructor:
 			cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
 		
 		if cached_deps is None:
-			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+
+			try:
+				deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+			except ZeroCompilationError as e:
+				raise ZeroHeaderNotFoundError(e.error + f"\n -- while processing source file '{str(path)}'")
+			
 			self.cache.set(str(path), value=[str(d) for d in deps])
 		else:
 			deps = [Path(d) for d in cached_deps]
 
-		included_headers = [self.makeHeaderNode(d) for d in deps]
+		try:
+			included_headers = [self.makeHeaderNode(d) for d in deps]
+		except ZeroHeaderNotFoundError as e:
+			raise ZeroHeaderNotFoundError(str(e) + f"\n -- while processing source file '{str(path)}'")
 
 		source.deps = included_headers
 
