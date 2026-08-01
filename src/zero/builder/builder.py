@@ -1,3 +1,6 @@
+from logging import info
+from threading import Lock
+
 from zero.compilers.get import getCompilerName
 from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 from zero.graph.nodes import *
@@ -13,6 +16,7 @@ from zero.utils.cache_manager import CacheManager
 
 from .batch_executor import BatchExecutor
 
+
 class Builder(NodeVisitor):
 
 	def __init__(self, config: BuildConfig) -> None:
@@ -26,7 +30,7 @@ class Builder(NodeVisitor):
 		self.compiling_shared_lib = False
 
 		self.include_dirs: list[Path] = []
-		self.visited_nodes: set[object] = set()
+		self.visited_target_paths: set[Path] = set()
 		self.current_target_arguments: list[str] = []
 
 		self.reporter = getReporter()
@@ -37,6 +41,9 @@ class Builder(NodeVisitor):
 
 		self.old_mtime_cache = CacheManager(config.directory.build / "old_mtime.cache")
 		self.mtime_cache = CacheManager(config.directory.build / "mtime.cache")
+
+		self.data_lock = Lock()
+		self.report_lock = Lock()
 
 
 	def detectStaleness(self, node: Node) -> bool:
@@ -88,7 +95,12 @@ class Builder(NodeVisitor):
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
 
-		if node in self.visited_nodes:
+		if self.compiling_shared_lib:
+			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name + ".pic")
+		else:
+			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name.removesuffix(".pic"))
+		
+		if node.targetpath in self.visited_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
@@ -122,12 +134,12 @@ class Builder(NodeVisitor):
 			self.reporter.info(title, msg, "bold yellow")
 			self.reportWarning(e.cause, str(e))
 
-		self.visited_nodes.add(node)
+		self.visited_target_paths.add(node.targetpath)
 
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
 
-		if node in self.visited_nodes:
+		if node.targetpath in self.visited_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
@@ -165,7 +177,7 @@ class Builder(NodeVisitor):
 		finally:
 			self.compiling_shared_lib = False
 
-		self.visited_nodes.add(node)
+		self.visited_target_paths.add(node.targetpath)
 	
 
 	def visitPreCompiledLibraryNode(self, node: PreCompiledLibraryNode):
@@ -178,7 +190,7 @@ class Builder(NodeVisitor):
 
 	def visitExecutableNode(self, node: ExecutableNode):
 
-		if node in self.visited_nodes:
+		if node.targetpath in self.visited_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
@@ -211,21 +223,26 @@ class Builder(NodeVisitor):
 			self.reporter.info(title, msg, "bold yellow")
 			self.reportWarning(e.cause, str(e))
 
-		self.visited_nodes.add(node)
+		
+		self.visited_target_paths.add(node.targetpath)
 
 		
 	def visitSourceNode(self, node: SourceNode):
 
-		if node in self.visited_nodes:
-			return
+		if self.compiling_shared_lib:
+			node.outpath = node.outpath.parent / (node.outpath.name + ".pic")
+		else:
+			node.outpath = node.outpath.parent / (node.outpath.name.removesuffix(".pic"))
+		
+
+		with self.data_lock:
+			if node.outpath in self.visited_target_paths: return
 		
 		if not self.detectStaleness(node):
 			return
 
 		for deps in node.deps:
 			self.visit(deps)
-
-		error: Exception | None = None
 
 		try:
 			self.current_compiler.buildFile(
@@ -235,21 +252,29 @@ class Builder(NodeVisitor):
 				include_dirs=self.include_dirs, 
 				arguments=self.current_target_arguments
 			)
+			self.reporter.info("Built", str(node.filepath))
 		except ZeroCompilationError as e:
 			raise
 		except ZeroCompilationWarning as e:
-			error = e
+			with self.report_lock:
+				self.reporter.info("Built", str(node.filepath), "bold yellow")
+				self.reportWarning(e.cause, str(e))
 
-		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
-
-		if error: raise error
-
-		self.visited_nodes.add(node)
+		with self.data_lock:
+			self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
+			self.visited_target_paths.add(node.outpath)
 		
 
 	def visitHeaderNode(self, node: HeaderNode):
+
+		if node.filepath in self.visited_target_paths:
+			return
+
 		for deps in node.deps:
 			self.visit(deps)
+
+		self.visited_target_paths.add(node.filepath)
+
 		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
 
 
@@ -265,19 +290,12 @@ class Builder(NodeVisitor):
 
 			node = future_map[future]
 
-			info = "Built"
-			msg = str(node.filepath)
-
 			try:
 				future.result()
-				self.reporter.info(info, msg)
 			except ZeroCompilationError:
-				self.reporter.info(info, msg, "bold red")
+				self.reporter.info("Built", str(node.filepath), "bold red")
 				raise
-			except ZeroCompilationWarning as e:
-				self.reporter.info(info, msg, "bold yellow")
-				self.reportWarning(e.cause, str(e))
-
+			
 
 	def reportWarning(self, title: str, details: str):
 		self.reporter.box(details, color="yellow", title=title)

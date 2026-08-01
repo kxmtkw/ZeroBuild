@@ -118,28 +118,22 @@ class StaleDetector(NodeVisitor):
 			return
 
 
-
 	def visitSourceNode(self, node: SourceNode):
-		
+
 		if node not in self.visited_nodes:
 			self.visited_nodes.add(node)
 		else:
 			return
 
-
-		if not node.outpath.exists():
-			self.markStale(node)
-			return
-		
 		old_mtime = self.old_mtime_cache.get(str(node.filepath), default=0, valid_classes=(float,int,)) 
 		new_mtime = self.mtime_cache.get(str(node.filepath), default=1, valid_classes=(float,int,)) 
 
 		if new_mtime > old_mtime:
 			self.markStale(node)
 			return
-		
-		self.current_source_outpath = node.filepath
 
+		self.current_source_outpath = node.filepath
+		
 		for header in node.deps:
 			self.visit(header)
 

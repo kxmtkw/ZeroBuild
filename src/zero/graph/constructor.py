@@ -16,7 +16,7 @@ from zero.interface.precomp_lib import PreCompiledLibrary
 
 from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
-from zero.utils.cache_manager import CacheManager
+from zero.utils import CacheManager
 
 
 class GraphConstructor:
