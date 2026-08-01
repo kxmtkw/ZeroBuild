@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from shutil import which
+
 
 class BaseCompiler(ABC):
 	"""
@@ -9,6 +11,11 @@ class BaseCompiler(ABC):
 
 	def __init__(self) -> None:
 		super().__init__()
+		self.binary: str = ""
+
+
+	def doesExist(self) -> bool:
+		return which(self.binary) is not None
 
 
 	@abstractmethod

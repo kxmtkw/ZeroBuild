@@ -9,7 +9,7 @@ class GccCompiler(BaseCompiler):
 
 	def __init__(self) -> None:
 		super().__init__()
-		self.compiler_binary = self.linker_binary = "gcc"
+		self.binary = "gcc"
 
 
 	def _parseDependencies(self, gcc_output: str) -> list[Path]:
@@ -30,7 +30,7 @@ class GccCompiler(BaseCompiler):
 		include_args = [f"-I{str(dir)}" for dir in include_dirs]
 
 		process = subprocess.run(
-			[self.compiler_binary, "-MM", *include_args, str(filepath)], 
+			[self.binary, "-MM", *include_args, str(filepath)], 
 			capture_output=True, 
 			text=True
 		)
@@ -45,7 +45,7 @@ class GccCompiler(BaseCompiler):
 
 		include_args = [f"-I{str(dir)}" for dir in include_dirs]
 
-		cmd = [self.compiler_binary, *arguments, "-c", *include_args, str(filepath), "-o", str(outfile)] 
+		cmd = [self.binary, *arguments, "-c", *include_args, str(filepath), "-o", str(outfile)] 
 
 		if for_shared:
 			cmd.append("-fPIC")
@@ -84,7 +84,7 @@ class GccCompiler(BaseCompiler):
 		
 		str_objects = [str(obj) for obj in objects]
 		
-		cmd = [self.compiler_binary, "-shared", "-o", str(outfile), *str_objects]
+		cmd = [self.binary, "-shared", "-o", str(outfile), *str_objects]
 		
 		if libraries:
 			cmd.append("-Wl,--whole-archive")
@@ -111,7 +111,7 @@ class GccCompiler(BaseCompiler):
 		str_libs = [str(lib) for lib in libraries]
 
 		process = subprocess.run(
-			[self.compiler_binary, *str_objects, *str_libs, "-o", str(outfile)], 
+			[self.binary, *str_objects, *str_libs, "-o", str(outfile)], 
 			capture_output=True, 
 			text=True
 		)

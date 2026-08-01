@@ -16,15 +16,19 @@ _COMPILERS = {
 	"clang++": ClangxxCompiler(),
 }
 
+
 def getCompiler(compiler: CompilerType, default: BaseCompiler | None = None) -> BaseCompiler:
+
 	try:
 		return _COMPILERS[compiler]
 	except KeyError:
 		if default is None:
 			raise ValueError(f"Unsupported compiler driver: '{compiler}'")
 		return default
+	
 
 def getCompilerName(compiler: BaseCompiler) -> str:
+
 	for key, val in _COMPILERS.items():
 		if val == compiler:
 			return key
