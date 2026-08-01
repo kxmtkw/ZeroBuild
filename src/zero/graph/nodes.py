@@ -2,7 +2,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from zero.compilers.base import BaseCompiler
+from zero.compilers.base import BaseCompilerDriver
 
 class Node(ABC):
 	"""
@@ -61,10 +61,10 @@ class FileNode(Node):
 
 class RootNode(Node):
 
-	def __init__(self, targets: Sequence[TargetNode], compilers: dict[TargetNode, BaseCompiler]):
+	def __init__(self, targets: Sequence[TargetNode], compilers: dict[TargetNode, BaseCompilerDriver]):
 		super().__init__()
 		self.targets: Sequence[TargetNode] = targets
-		self.target_compilers: dict[TargetNode, BaseCompiler] = compilers
+		self.target_compilers: dict[TargetNode, BaseCompilerDriver] = compilers
 
 	def __str__(self) -> str:
 		return f"Root()"

@@ -2,7 +2,7 @@ from zero.compilers.get import getCompiler
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.nodes import *
-from zero.compilers import BaseCompiler
+from zero.compilers import BaseCompilerDriver
 
 
 from zero.interface.target import Target

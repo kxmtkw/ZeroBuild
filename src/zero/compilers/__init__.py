@@ -1,4 +1,4 @@
-from .base import BaseCompiler
+from .base import BaseCompilerDriver
 
 from .gcc import GccCompiler
 from .gxx import GxxCompiler

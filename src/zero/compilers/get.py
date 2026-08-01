@@ -1,7 +1,7 @@
 from functools import cache
 from typing import Literal
 
-from zero.compilers.base import BaseCompiler
+from zero.compilers.base import BaseCompilerDriver
 from zero.compilers.clang import ClangCompiler
 from zero.compilers.clangxx import ClangxxCompiler
 from zero.compilers.gcc import GccCompiler
@@ -17,7 +17,7 @@ _COMPILERS = {
 }
 
 
-def getCompiler(compiler: CompilerType, default: BaseCompiler | None = None) -> BaseCompiler:
+def getCompiler(compiler: CompilerType, default: BaseCompilerDriver | None = None) -> BaseCompilerDriver:
 
 	try:
 		return _COMPILERS[compiler]
@@ -27,7 +27,7 @@ def getCompiler(compiler: CompilerType, default: BaseCompiler | None = None) -> 
 		return default
 	
 
-def getCompilerName(compiler: BaseCompiler) -> str:
+def getCompilerName(compiler: BaseCompilerDriver) -> str:
 
 	for key, val in _COMPILERS.items():
 		if val == compiler:

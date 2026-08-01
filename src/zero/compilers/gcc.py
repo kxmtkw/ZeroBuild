@@ -2,10 +2,10 @@ import cmd
 from pathlib import Path
 import subprocess
 from zero.errors import ZeroCompilationError, ZeroCompilationWarning
-from .base import BaseCompiler
+from .base import BaseCompilerDriver
 
 
-class GccCompiler(BaseCompiler):
+class GccCompiler(BaseCompilerDriver):
 
 
 	def __init__(self) -> None:

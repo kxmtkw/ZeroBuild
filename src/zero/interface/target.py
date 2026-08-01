@@ -6,7 +6,7 @@ from zero.errors.errors import ZeroAPIError
 from zero.interface.source import Source
 from zero.interface.library import Library
 
-from zero.compilers.base import BaseCompiler
+from zero.compilers.base import BaseCompilerDriver
 
 from zero.interface.build import Build
 
@@ -23,7 +23,7 @@ class Target:
 		self._name: str
 		self._source: Source
 		self._compiler: CompilerType = "inherit"
-		self._compiler_object: BaseCompiler
+		self._compiler_object: BaseCompilerDriver
 
 
 	def _validate(self, build: Build) -> None:

@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import which
 
 
-class BaseCompiler(ABC):
+class BaseCompilerDriver(ABC):
 	"""
 	Base class for Compilers utilizing pathlib.Path objects.
 	"""

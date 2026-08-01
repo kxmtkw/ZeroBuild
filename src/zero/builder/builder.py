@@ -7,7 +7,7 @@ from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
 
-from zero.compilers import BaseCompiler
+from zero.compilers import BaseCompilerDriver
 
 from zero.orchestrator.config import BuildConfig
 from zero.reporter import getReporter
@@ -36,8 +36,8 @@ class Builder(NodeVisitor):
 		self.reporter = getReporter()
 
 		self.root: RootNode
-		self.current_compiler: BaseCompiler
-		self.compilers_stack: list[BaseCompiler] = []
+		self.current_compiler: BaseCompilerDriver
+		self.compilers_stack: list[BaseCompilerDriver] = []
 
 		self.old_mtime_cache = CacheManager(config.directory.build / "old_mtime.cache")
 		self.mtime_cache = CacheManager(config.directory.build / "mtime.cache")

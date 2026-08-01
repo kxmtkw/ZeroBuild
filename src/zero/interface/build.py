@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from zero.compilers.base import BaseCompiler
+from zero.compilers.base import BaseCompilerDriver
 from zero.compilers.get import getCompiler
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
@@ -17,7 +17,7 @@ class Build:
 	def __init__(self) -> None:
 		self._directory: Path = Path("build")
 		self._compiler: CompilerType | None = None
-		self._compiler_object: BaseCompiler
+		self._compiler_object: BaseCompilerDriver
 		self._arguments: list[str] = []
 
 
