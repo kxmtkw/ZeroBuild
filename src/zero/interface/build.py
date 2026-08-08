@@ -6,6 +6,7 @@ from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 
+from zero.interface.internals import Internals
 
 
 class Build:
@@ -66,6 +67,7 @@ class Build:
 		"""
 		Global arguments to be passed to the compiler for all targets in the build system.
 		Not recommended if the build system has multiple languages or uses multiple compilers.
+		Should only be used if the whole project uses the same compiler or the same language.
 		"""
 		return self._arguments
 
@@ -76,3 +78,8 @@ class Build:
 			self._arguments = [arg for arg in args]
 		else:
 			self._arguments = [args]
+
+
+	def addCompiler(self, name: str, compiler: Internals.CompilerDriver):
+		"Add a custom compiler driver to the build system."
+		CompilerManager.addCompiler(name, compiler)

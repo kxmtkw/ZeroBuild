@@ -9,6 +9,7 @@ from zero.interface.shared_lib import SharedLibrary
 from zero.interface.precomp_lib import PreCompiledLibrary
 from zero.interface.glob import FileGlob
 from zero.interface.system import System
+from zero.interface.internals import Internals
 
 __all__ = [
 	"Path",
@@ -19,5 +20,6 @@ __all__ = [
 	"SharedLibrary",
 	"PreCompiledLibrary",
 	"FileGlob",
-	"System"
+	"System",
+	"Internals"
 ]

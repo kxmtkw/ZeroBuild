@@ -1,6 +1,6 @@
 from typing import Literal
 
-CompilerType = Literal[
+CompilerType = str | Literal[
 	"gcc", 
 	"g++", 
 	"clang", 
