@@ -2,6 +2,7 @@ from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.nodes import *
+from zero.graph.target_name import TargetNameGenerator
 from zero.compilers import BaseCompilerDriver
 
 
@@ -36,6 +37,8 @@ class GraphConstructor:
 		self.exec_dir = config.directory.binary
 		self.static_lib_dir = config.directory.static_lib
 		self.shared_lib_dir = config.directory.shared_lib
+
+		self.target_name_gen = TargetNameGenerator()
 
 		self.cache: CacheManager = CacheManager(self.build_dir / "deps.cache")
 		self.old_mtime_cache = CacheManager(self.build_dir / "old_mtime.cache")
@@ -97,7 +100,7 @@ class GraphConstructor:
 		if exe in self.made_executables:
 			return self.made_executables[exe]
 		
-		outfile = self.exec_dir / exe._name
+		outfile = self.target_name_gen.executable(self.exec_dir,  exe._name)
 		
 		include_dirs: list[Path] = []
 		lib_nodes: list[LibraryNode] = []
@@ -132,8 +135,7 @@ class GraphConstructor:
 		if lib in self.made_static_libs:
 			return self.made_static_libs[lib]
 		
-		outfile = self.static_lib_dir / ("lib" + lib._name + ".a")
-
+		outfile = self.target_name_gen.staticLib(self.static_lib_dir, lib._name)
 		
 		include_dirs: list[Path] = []
 		lib_nodes: list[LibraryNode] = []
@@ -169,7 +171,7 @@ class GraphConstructor:
 		if lib in self.made_shared_libs:
 			return self.made_shared_libs[lib]
 		
-		outfile = self.shared_lib_dir / ("lib" + lib._name + ".so")
+		targetpath, libpath = self.target_name_gen.sharedLib(self.static_lib_dir, lib._name)
 
 		include_dirs: list[Path] = []
 		lib_nodes: list[LibraryNode] = []
@@ -187,7 +189,8 @@ class GraphConstructor:
 		source_nodes = self.makeSourceNodes(lib.source)
 		
 		node = SharedLibraryNode(
-			outfile,
+			targetpath,
+			libpath,
 			source_nodes,
 			lib_nodes,
 			lib._arguments,
@@ -257,7 +260,7 @@ class GraphConstructor:
 			# this almost will never be raised because the interface object Source will check, but just in case
 			raise ZeroSourceNotFoundError(f"Source file '{str(path)}' not found")
 		
-		outfile = self.object_dir / path.parent / (path.name + ".o")
+		outfile = self.target_name_gen.objectFile(self.object_dir / path.parent, path.name)
 
 		if not outfile.parent.exists():
 			outfile.parent.mkdir(511, True, True)

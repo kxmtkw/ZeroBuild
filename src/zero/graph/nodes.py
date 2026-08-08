@@ -108,9 +108,9 @@ class StaticLibraryNode(TargetNode, LibraryNode):
 
 class SharedLibraryNode(TargetNode, LibraryNode):
 
-	def __init__(self, libpath: Path, sources: Sequence[SourceNode], libs: Sequence[LibraryNode], arguments: list[str], private_headers: Sequence[Path], public_headers: Sequence[Path]):
+	def __init__(self, targetpath: Path, libpath: Path, sources: Sequence[SourceNode], libs: Sequence[LibraryNode], arguments: list[str], private_headers: Sequence[Path], public_headers: Sequence[Path]):
 		super().__init__(
-			targetpath=libpath, 
+			targetpath=targetpath, 
 			sources=sources,
 			libs=libs,
 			arguments=arguments,
