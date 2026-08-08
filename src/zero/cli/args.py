@@ -48,9 +48,9 @@ def add_run_command(subparsers: argparse._SubParsersAction) -> None:
 	)
 
 
-def add_clear_cache_command(subparsers: argparse._SubParsersAction) -> None:
+def add_clean_command(subparsers: argparse._SubParsersAction) -> None:
 	parser = subparsers.add_parser(
-		"clear-cache",
+		"clean",
 		help="Clear the build cache.",
 	)
 
@@ -73,7 +73,7 @@ def setupParser() -> argparse.ArgumentParser:
 
 	add_make_command(subparsers)
 	add_run_command(subparsers)
-	add_clear_cache_command(subparsers)
+	add_clean_command(subparsers)
 	add_graph_command(subparsers)
 	add_version_command(subparsers)
 

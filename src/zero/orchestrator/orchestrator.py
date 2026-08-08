@@ -216,7 +216,7 @@ class Orchestrator:
 		executor.run()
 
 
-	def clearCache(self):
+	def clean(self):
 		module = self.loadConfigFile()
 		build = self.getBuild(module)
 
