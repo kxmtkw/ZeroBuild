@@ -33,6 +33,7 @@ class Builder(NodeVisitor):
 		self.include_dirs: list[Path] = []
 		self.visited_target_paths: set[Path] = set()
 		self.current_target_arguments: list[str] = []
+		self.accumulated_static_lib_chain: list[StaticLibraryNode] = []
 
 		self.reporter = getReporter()
 
@@ -100,18 +101,22 @@ class Builder(NodeVisitor):
 			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name + ".pic")
 		else:
 			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name.removesuffix(".pic"))
+
+		include_dirs = []
 		
+		for lib in node.linked_libraries:
+			if isinstance(lib, StaticLibraryNode):
+				self.accumulated_static_lib_chain.append(lib)
+			self.visit(lib)
+			include_dirs.extend(lib.public_headers)
+			
+
 		if node.targetpath in self.visited_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
 			return
 
-		include_dirs = []
-
-		for lib in node.linked_libraries:
-			self.visit(lib)
-			include_dirs.extend(lib.public_headers)
 
 		include_dirs.extend(node.public_headers)
 		include_dirs.extend(node.private_headers)
@@ -150,7 +155,11 @@ class Builder(NodeVisitor):
 
 		include_dirs = []
 
+		self.accumulated_static_lib_chain.clear()
+
 		for lib in node.linked_libraries:
+			if isinstance(lib, StaticLibraryNode):
+				self.accumulated_static_lib_chain.append(lib)
 			self.visit(lib)
 			include_dirs.extend(lib.public_headers)
 
@@ -167,7 +176,11 @@ class Builder(NodeVisitor):
 		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
 
 		try:
-			self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
+			self.current_compiler.buildSharedLib(
+				[n.outpath for n in node.sources], 
+				[l.libpath for l in self.accumulated_static_lib_chain], 
+				node.libpath
+			)
 			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
 			self.reporter.info(title, msg, "bold red")
@@ -199,7 +212,11 @@ class Builder(NodeVisitor):
 		
 		include_dirs = []
 
+		self.accumulated_static_lib_chain.clear()
+
 		for lib in node.linked_libraries:
+			if isinstance(lib, StaticLibraryNode):
+				self.accumulated_static_lib_chain.append(lib)
 			self.visit(lib)
 			include_dirs.extend(lib.public_headers)
 
@@ -215,7 +232,11 @@ class Builder(NodeVisitor):
 		msg = f"{node.targetpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
 
 		try:
-			self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)
+			self.current_compiler.buildExecutable(
+				[n.outpath for n in node.sources], 
+				[l.libpath for l in self.accumulated_static_lib_chain], 
+				node.targetpath
+			)
 			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
 			self.reporter.info(title, msg, "bold red")
