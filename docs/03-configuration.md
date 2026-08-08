@@ -1,23 +1,33 @@
 
-# Zero - Docs
+## Configuration
+`Zero` is entirely configured via the zero python API.
 
-## Setup
+## Overview
+Here is a brief overview of everything:
 
-### Installation
-Install via the python package `zero-build`.
-
-### Config File
-Create a file named `zerobuild.py` in the root of your project. This file will configure the build system.
-
-### Importing
-It is recommened to import everything present in the zero module because it will make writing the configuration more easier.
-```python
-from zero import *
-```
+- `Build`
+	- Core class to configure the build system as a whole.
+- `Executable`
+	- Class to create an executable.
+- `StaticLibrary`
+	- Class to create a static library / archive.
+- `SharedLibrary`
+	- Class to create a shared libary.
+- `PreCompiledLibrary`
+	- Class to refer to an already compiled library present on the filesystem.
+- `Source`
+	- Class to specify sources for a target.
+- `System`
+	- Class giving access to some useful system related utilities.
+- `Flags`
+	- Class with common compiler flags.
+- `FileGlob`
+	- Utilty to glob files from a directory.
+- `Internals`
+	- Class exposing zero internals. Allowing you to create custom compiler drivers.
 
 ## Core API
 
-Zero exposes the following main classes to write the build system.
 
 ### Build
 This class specifies the general behavior of the build system. The variable to which the `Build()` instance is assigned should be named `build`.
@@ -157,5 +167,3 @@ zero run main --debug --file "file.txt"
 zero run --fresh main --debug --file "file.txt"
 ```
 If you pass it after the executable name, it will be parsed as an argument to `main`.
-
-
