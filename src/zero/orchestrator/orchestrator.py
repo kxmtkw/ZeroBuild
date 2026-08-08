@@ -9,7 +9,6 @@ from zero.graph.printer import NodePrinter
 from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
 from zero.builder.builder import Builder
-from zero.compilers.get import getCompiler
 
 from zero.analyzers.cycle_detector import CycleDetector
 from zero.analyzers.stale_detector import StaleDetector

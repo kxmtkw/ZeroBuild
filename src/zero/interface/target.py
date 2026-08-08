@@ -1,6 +1,4 @@
-
-from zero.compilers.get import getCompiler
-from zero.compilers.get import getCompiler
+from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 from zero.interface.source import Source
@@ -32,7 +30,7 @@ class Target:
 			raise ZeroAPIError(f"Source has not been specified for target [bold]{getattr(self, "_name", "unknown")}[/bold].")
 
 		try:	
-			self._compiler_object = build._compiler_object if self._compiler == "inherit" else getCompiler(self._compiler)
+			self._compiler_object = build._compiler_object if self._compiler == "inherit" else CompilerManager.getCompiler(self._compiler)
 		except ValueError:
 			raise ZeroAPIError(f"Unknown compiler specified for target [bold]{getattr(self, '_name', 'unknown')}[/bold]: '{self._compiler}'")
 

@@ -1,7 +1,8 @@
 from logging import info
 from threading import Lock
 
-from zero.compilers.get import getCompilerName
+from zero.compilers.manager import CompilerManager
+
 from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
@@ -122,7 +123,7 @@ class Builder(NodeVisitor):
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.libpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
 
 		try:
 			self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
@@ -163,7 +164,7 @@ class Builder(NodeVisitor):
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.libpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
 
 		try:
 			self.current_compiler.buildSharedLib([n.outpath for n in node.sources], [l.libpath for l in node.linked_libraries], node.libpath)
@@ -211,7 +212,7 @@ class Builder(NodeVisitor):
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.targetpath.name} [bold magenta]via {getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.targetpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
 
 		try:
 			self.current_compiler.buildExecutable([n.outpath for n in node.sources], [n.libpath for n in node.linked_libraries], node.targetpath)

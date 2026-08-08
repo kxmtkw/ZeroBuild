@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Literal
 
 from zero.compilers.base import BaseCompilerDriver
-from zero.compilers.get import getCompiler
+from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 
@@ -27,7 +27,7 @@ class Build:
 			raise ZeroAPIError("Compiler has not been specified for the build system.")
 		
 		try:
-			self._compiler_object = getCompiler(self._compiler)
+			self._compiler_object = CompilerManager.getCompiler(self._compiler)
 		except ValueError:
 			raise ZeroAPIError(f"Unknown compiler specified for build: '{self._compiler}'")
 

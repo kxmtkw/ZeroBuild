@@ -1,4 +1,4 @@
-from zero.compilers.get import getCompiler
+from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.nodes import *
