@@ -1,56 +1,14 @@
-
 # Zero - Super Easy Build System
 
 *Zero* is a C/C++ build system designed to be as *easy* as possible to use, without lacking any features. Written in python!
 
-## Architecture
-
 *Zero* is a build system, not a meta build system. It handles dependency resolution to compilation and linking by itself.
 
-### Design Goal
-The sole reason Zero exists is because *I did not want to learn CMake syntax.* There is absolutely no reason other than that.
-
-My main design goal for this project was to make a build system which as easy to write as possible. 
-
-Zero also avoid implictness,
-the user has to be explicit with their flags and compilers to use the build system properly.
-
-### Principle
-Like most build systems, Zero uses a *DAG* (Directed Acyclic Graph) to handle dependencies.
-
-### Working
-Zero works in the following phases after it is invoked:
-```
-┌───────────────────────┐
-│ Config Script Loading │
-└───────────────────────┘
-           |
-           V
-┌───────────────────────┐
-│  Graph Construction   │
-└───────────────────────┘
-           |
-           V
-┌───────────────────────┐
-│    Cycle Detection    │
-└───────────────────────┘
-           |
-           V
-┌───────────────────────┐
-│  Staleness Detection  │
-└───────────────────────┘
-           |
-           V
-┌───────────────────────┐
-│      Build Phase      │
-└───────────────────────┘
-```
-
-Read documentation here: [docs](docs/00-index.md)
+Read more about the architecture here: [Architecture](docs/01-arch.md)
 
 ## Usage
 
-First, create a `zerobuild.py` file in your project root and import `zero`
+First, create a *zerobuild.py* file in your project root and import *zero*.
 
 ```python
 from zero import *
@@ -87,7 +45,7 @@ zero make
 ```
 A binary named *main* can now be found at *build/bin/main*
 
-`Read more about how to use and configure Zero here:` [docs](docs/03-configuration.md).
+Read more about how to use and configure Zero here: [Configuration & Usage](docs/03-configuration.md).
 
 
 ## Installation
@@ -99,4 +57,11 @@ pip install zero-build
 > [!WARNING]
 > For Linux, You might have to use **--break-system-packages**. This is a workaround for now until I make packages for major Linux distributions.
 
-`Read more about how to setup Zero here:` [docs](docs/02-setup.md).
+Read more about how to setup Zero here: [Installation](docs/02-setup.md).
+
+
+## Documentation Index
+
+1. [Architecture](docs/01-arch.md)
+2. [Setup](docs/02-setup.md)
+3. [Configuration & Usage](docs/03-configuration.md)
