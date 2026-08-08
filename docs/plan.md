@@ -16,12 +16,12 @@
 
 + More Compilers
 	+ MSVC, G++, Clang++ `In-Progress`
-	+ Name Compilers to Compiler Drivers because that's more accurate.
+	+ Name Compilers to Compiler Drivers because that's more accurate. `DONE`
 
 + Stale detection and avoiding recompilation `Done`
 
-+ Multi OS support
-	+ Linux `In-Progress`
++ Multi OS support `In-Progress`
+	+ Linux
 	+ Windows
 	+ MacOS
 
@@ -35,7 +35,7 @@
 + Threading/Multiprocessing compilation `DONE`
 	+ Requires converting the graph into a 1D array so the builder can multiprocess `DID NOT NEED`
 
-+ Boxed errors and warnings
++ Boxed errors and warnings `DONE`
 	+ Errors look like ahh right now.
 		+ API errors for when the user typed something wrong or some file is missing
 		+ Build errors when the build fails liek cycle detected etc.
@@ -47,8 +47,8 @@
 	+ Cycle detectors `Done`
 	+ Change detectors `Done`
 
-+ Readable error messages
-	+ Traceback upto the user script level
++ Readable error messages `DONE`
+	+ Traceback upto the user script level `SEEMS HARD BUT I WILL TRY`
 	+ Different and clear error types
 
 + Clearer and Prettier log messages. `In-Progress`
@@ -66,8 +66,8 @@ zero run bin/main -- --debug
 zero build --debug
 ```
 
-+ Allow the user to control the build system more.
-	+ Allow the user to make custom CompilerDrivers to the build system. 
++ Allow the user to control the build system more. `IN-PROGRESS`
+	+ Allow the user to make custom CompilerDrivers to the build system. `DONE`
 
 + A CMAKE transpiler that turns the DAG into a `CMakeLists.txt` file.
 	+ This is actually simpler than I thought. Just traverse the DAG and build the CMAKE file as we go.
