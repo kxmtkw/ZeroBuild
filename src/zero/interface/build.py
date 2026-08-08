@@ -6,6 +6,8 @@ from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 
+from zero.interface.types import FlagType
+
 from zero.interface.internals import Internals
 
 
@@ -73,11 +75,11 @@ class Build:
 
 
 	@arguments.setter
-	def arguments(self, args: tuple[str, ...] | str):
+	def arguments(self, args: tuple[FlagType, ...] | FlagType):
 		if isinstance(args, (tuple)):
-			self._arguments = [arg for arg in args]
+			self._arguments = [str(arg) for arg in args]
 		else:
-			self._arguments = [args]
+			self._arguments = [str(args)]
 
 
 	def addCompiler(self, name: str, compiler: Internals.CompilerDriver):

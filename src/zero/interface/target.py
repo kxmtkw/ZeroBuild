@@ -3,6 +3,7 @@ from zero.compilers.types import CompilerType
 from zero.errors.errors import ZeroAPIError
 from zero.interface.source import Source
 from zero.interface.library import Library
+from zero.interface.types import FlagType
 
 from zero.compilers.base import BaseCompilerDriver
 
@@ -80,11 +81,11 @@ class Target:
 	
 	
 	@arguments.setter
-	def arguments(self, args: tuple[str, ...] | str):
+	def arguments(self, args: tuple[FlagType, ...] | FlagType):
 		if isinstance(args, (tuple)):
-			self._arguments = [arg for arg in args]
+			self._arguments = [str(arg) for arg in args]
 		else:
-			self._arguments = [args]
+			self._arguments = [str(args)]
 
 
 	@property

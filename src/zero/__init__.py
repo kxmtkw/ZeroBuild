@@ -10,6 +10,7 @@ from zero.interface.precomp_lib import PreCompiledLibrary
 from zero.interface.glob import FileGlob
 from zero.interface.system import System
 from zero.interface.internals import Internals
+from zero.interface.flags import Flags
 
 __all__ = [
 	"Path",
@@ -21,5 +22,6 @@ __all__ = [
 	"PreCompiledLibrary",
 	"FileGlob",
 	"System",
-	"Internals"
+	"Internals",
+	"Flags"
 ]
