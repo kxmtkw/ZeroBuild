@@ -40,8 +40,7 @@ class Orchestrator:
 		except ZeroAPIError as e:
 			self.reportAndExit("Misconfigured Build File", str(e))
 		except Exception as e:
-			self.reportAndExit("Unexpected Error", f"[{e.__class__.__name__}] {str(e)}")
-			raise e
+			self.reportError(e)
 
 		
 		return module
