@@ -18,7 +18,11 @@ def runCli(orchestrator: Orchestrator):
 		orchestrator.clearCache()
 
 	elif args.command == "graph":
-			orchestrator.printGraph()
+		orchestrator.printGraph()
+
+	elif args.command == "version":
+		from zero import __version__
+		print(__version__)
 
 
 def main():

@@ -60,6 +60,12 @@ def add_graph_command(subparsers: argparse._SubParsersAction) -> None:
 		help="Generate and print the DAG for a project.",
 	)
 
+def add_version_command(subparsers: argparse._SubParsersAction) -> None:
+	parser = subparsers.add_parser(
+		"version",
+		help="Print zero version",
+	)
+
 
 def setupParser() -> argparse.ArgumentParser:
 	parser = argparse.ArgumentParser(prog="zero", description="Zero Build System")
@@ -69,6 +75,7 @@ def setupParser() -> argparse.ArgumentParser:
 	add_run_command(subparsers)
 	add_clear_cache_command(subparsers)
 	add_graph_command(subparsers)
+	add_version_command(subparsers)
 
 	return parser
 

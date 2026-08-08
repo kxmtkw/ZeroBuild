@@ -1,3 +1,5 @@
+__version__ = "v1.4.0"
+
 # Main API classes
 from pathlib import Path
 
