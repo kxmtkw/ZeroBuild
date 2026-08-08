@@ -6,7 +6,11 @@ from .base import BaseCompilerDriver
 
 
 class GccCompiler(BaseCompilerDriver):
-
+	"""
+	Compiler Driver for gcc C compiler.
+	Any compiler whose command structure matches gcc can simply inherit from from this class and change the `binary` field.
+	For example, for a clang driver, it can inherit from this class and set `self.binary` to `clang`. 
+	"""
 
 	def __init__(self) -> None:
 		super().__init__()
