@@ -1,8 +1,8 @@
-import cmd
 from pathlib import Path
 import subprocess
 from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 from .base import BaseCompilerDriver
+from .gcc_cmd import GccCommandGenerator
 
 
 class GccCompiler(BaseCompilerDriver):
@@ -15,6 +15,7 @@ class GccCompiler(BaseCompilerDriver):
 	def __init__(self) -> None:
 		super().__init__()
 		self.binary = "gcc"
+		self.gcc_cmd = GccCommandGenerator()
 
 
 	def _parseDependencies(self, gcc_output: str) -> list[Path]:
@@ -32,10 +33,10 @@ class GccCompiler(BaseCompilerDriver):
 
 	def getDependencies(self, filepath: Path, *, include_dirs: list[Path] = []) -> list[Path]:
 		
-		include_args = [f"-I{str(dir)}" for dir in include_dirs]
+		cmd = self.gcc_cmd.getDependencies(self.binary, filepath, include_dirs=include_dirs)
 
 		process = subprocess.run(
-			[self.binary, "-MM", *include_args, str(filepath)], 
+			cmd, 
 			capture_output=True, 
 			text=True
 		)
@@ -48,9 +49,7 @@ class GccCompiler(BaseCompilerDriver):
 
 	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = []) -> None:  
 
-		include_args = [f"-I{str(dir)}" for dir in include_dirs]
-
-		cmd = [self.binary, *arguments, "-c", *include_args, str(filepath), "-o", str(outfile)] 
+		cmd = self.gcc_cmd.buildFile(self.binary, filepath, outfile, for_shared=for_shared, include_dirs=include_dirs, arguments=arguments)
 
 		if for_shared:
 			cmd.append("-fPIC")
@@ -71,12 +70,7 @@ class GccCompiler(BaseCompilerDriver):
 		
 	def buildStaticLib(self, objects: list[Path], outfile: Path) -> None:  
 		
-		str_objects = [str(obj) for obj in objects]
-
-		if outfile.exists():
-			outfile.unlink()
-
-		cmd = ["ar", "rcs", str(outfile), *str_objects]
+		cmd = self.gcc_cmd.buildStaticLib(self.binary, objects, outfile)
 
 		process = subprocess.run(
 			cmd, 
@@ -94,12 +88,7 @@ class GccCompiler(BaseCompilerDriver):
 
 	def buildSharedLib(self, objects: list[Path], libraries: list[Path], outfile: Path) -> None:  
 		
-		str_objects = [str(obj) for obj in objects]
-
-		if outfile.exists():
-			outfile.unlink()
-
-		cmd = [self.binary, "-shared", "-o", str(outfile), *str_objects]
+		cmd = self.gcc_cmd.buildSharedLib(self.binary, objects, libraries, outfile)
 
 		for lib in libraries:
 			cmd.append("-Wl,--whole-archive")
@@ -121,12 +110,11 @@ class GccCompiler(BaseCompilerDriver):
 
 
 	def buildExecutable(self, objects: list[Path], libraries: list[Path], outfile: Path) -> None:  
-		
-		str_objects = [str(obj) for obj in objects]
-		str_libs = [str(lib) for lib in libraries]
+
+		cmd = self.gcc_cmd.buildExecutable(self.binary, objects, libraries, outfile)
 
 		process = subprocess.run(
-			[self.binary, *str_objects, *str_libs, "-o", str(outfile)], 
+			cmd, 
 			capture_output=True, 
 			text=True,
 			errors="replace"
