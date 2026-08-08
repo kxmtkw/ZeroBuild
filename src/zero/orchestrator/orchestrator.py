@@ -226,6 +226,26 @@ class Orchestrator:
 		else:
 			self.reporter.info("Clearing Cache", f"No cache found at {str(build.directory)} - Already Cleared")
 
+
+	def printGraph(self):
+		module = self.loadConfigFile()
+		build = self.getBuild(module)
+		targets = self.getTargets(module)
+
+		config = self.configureBuild(build.directory, False, 1)
+
+		self.graph = GraphConstructor(config)
+			
+		try:
+			root = self.graph.makeRoot(build, targets)
+		except (ZeroHeaderNotFoundError, ZeroSourceNotFoundError) as e:
+			self.reportAndExit("File Not Found", str(e))
+		except Exception as e:
+			self.reportError(e)
+
+		printer = NodePrinter()
+		printer.visit(root)
+
 		
 	def abort(self):
 		if self.builder: 

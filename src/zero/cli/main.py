@@ -17,6 +17,9 @@ def runCli(orchestrator: Orchestrator):
 	elif args.command == "clear-cache":
 		orchestrator.clearCache()
 
+	elif args.command == "graph":
+			orchestrator.printGraph()
+
 
 def main():
 	orchestrator = Orchestrator()

@@ -1,6 +1,6 @@
 from .nodes import *
 from .visitor import NodeVisitor
-
+from zero.reporter.get import getReporter
 
 class NodePrinter(NodeVisitor):
 
@@ -9,22 +9,33 @@ class NodePrinter(NodeVisitor):
 		super().__init__()
 		self._depth: int = 0
 		self._visited_ids: set[int] = set()
+		self._reporter = getReporter()
+
+		self._color_map = {
+			0: "bold red",
+			1: "bold yellow",
+			2: "bold blue",
+			3: "bold green",
+			4: "bold magenta"
+		}
 
 
 	def _get_indent(self) -> str:
-		return "    " * self._depth
+		return "   " * self._depth
 
 
 	def _print_node_base(self, node: Node, label: str, details: str) -> bool:
-		hex_id = f"0x{id(node):0x}"
+
 		indent = self._get_indent()
-		
+
+		color = self._color_map[self._depth % len(self._color_map)]
+
+		self._reporter.print(f"{indent}[{color}]({label})[/{color}] {details}")
+
 		if id(node) in self._visited_ids:
-			print(f"{indent}[{label}] {details} -> see {hex_id}")
 			return True
 			
 		self._visited_ids.add(id(node))
-		print(f"{indent}[{label}] {details} ({hex_id})")
 		return False
 
 
@@ -39,7 +50,7 @@ class NodePrinter(NodeVisitor):
 
 
 	def visitExecutableNode(self, node: ExecutableNode):
-		if self._print_node_base(node, "Executable", str(node.targetpath)):
+		if self._print_node_base(node, "Executable", str(node.targetpath.name)):
 			return
 			
 		self._depth += 1
@@ -51,7 +62,7 @@ class NodePrinter(NodeVisitor):
 
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
-		if self._print_node_base(node, "StaticLibrary", str(node.libpath)):
+		if self._print_node_base(node, "StaticLibrary", str(node.libpath.name)):
 			return
 			
 		self._depth += 1
@@ -63,7 +74,7 @@ class NodePrinter(NodeVisitor):
 
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
-		if self._print_node_base(node, "SharedLibrary", str(node.libpath)):
+		if self._print_node_base(node, "SharedLibrary", str(node.libpath.name)):
 			return
 			
 		self._depth += 1
@@ -80,7 +91,7 @@ class NodePrinter(NodeVisitor):
 	
 
 	def visitSourceNode(self, node: SourceNode):
-		details = f"{node.filepath} -> {node.outpath}"
+		details = f"{node.filepath}"
 		if self._print_node_base(node, "Source", details):
 			return
 			

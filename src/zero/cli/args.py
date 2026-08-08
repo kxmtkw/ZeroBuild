@@ -54,6 +54,11 @@ def add_clear_cache_command(subparsers: argparse._SubParsersAction) -> None:
 		help="Clear the build cache.",
 	)
 
+def add_graph_command(subparsers: argparse._SubParsersAction) -> None:
+	parser = subparsers.add_parser(
+		"graph",
+		help="Generate and print the DAG for a project.",
+	)
 
 
 def setupParser() -> argparse.ArgumentParser:
@@ -63,6 +68,7 @@ def setupParser() -> argparse.ArgumentParser:
 	add_make_command(subparsers)
 	add_run_command(subparsers)
 	add_clear_cache_command(subparsers)
+	add_graph_command(subparsers)
 
 	return parser
 
