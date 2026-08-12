@@ -43,6 +43,9 @@ class GraphConstructor:
 		self.cache: CacheManager = CacheManager(self.build_dir / "deps.cache")
 		self.old_mtime_cache = CacheManager(self.build_dir / "old_mtime.cache")
 		self.mtime_cache = CacheManager(self.build_dir / "mtime.cache")
+
+		if config.build_script_updated:
+			self.old_mtime_cache.clear()
 		
 		self.include_dirs: list[Path] = []
 		

@@ -95,3 +95,8 @@ class CacheManager:
 
 	def moveData(self, other: CacheManager):
 		self._data = other._data.copy()
+
+
+	def clear(self):
+		self._data = {}
+		self.save()

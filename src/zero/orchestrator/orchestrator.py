@@ -19,7 +19,7 @@ from zero.orchestrator.config import BuildConfig, Directory
 from zero.orchestrator.executor import Executor
 from zero.reporter import TerminalReporter
 
-from zero.utils import ModuleLoader
+from zero.utils import ModuleLoader, CacheManager
 
 
 class Orchestrator:
@@ -64,6 +64,18 @@ class Orchestrator:
 
 		config.threads = threads
 
+		config.build_script = Path("zerobuild.py")
+
+		build_file_cache = CacheManager(config.directory.build / "zerobuild.cache")
+
+		old_mtime = build_file_cache.get("mtime", default=0, valid_classes=(int, float))
+		new_mtime  = config.build_script.stat().st_mtime
+
+		config.build_script_updated = old_mtime < new_mtime
+
+		build_file_cache.set("mtime", value=new_mtime)
+		build_file_cache.save()
+
 		return config
 
 
@@ -103,11 +115,9 @@ class Orchestrator:
 		self.reporter.info("Directory", f"{str(build.directory)} chosen.")
 		self.reporter.info("Threads", f"compiling with {config.threads} threads")
 
-
 		# Making the DAG
 		self.graph = GraphConstructor(config)
 
-		
 		try:
 			root = self.graph.makeRoot(build, targets, needed_targets)
 		except (ZeroHeaderNotFoundError, ZeroSourceNotFoundError) as e:
@@ -131,6 +141,8 @@ class Orchestrator:
 
 		if config.fresh_build:
 			msg = "skipped - fresh make"
+		elif config.build_script_updated:
+			msg = "skipped - build script updated"
 		else:
 			stale = StaleDetector(config)
 			stale.visit(root)
@@ -139,7 +151,6 @@ class Orchestrator:
 			
 		self.reporter.info("Staleness", msg)		
 		self.reporter.endPhase("Configuration complete.")	
-
 
 		try:
 			self.builder = Builder(config)

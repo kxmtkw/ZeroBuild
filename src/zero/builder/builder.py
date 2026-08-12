@@ -26,7 +26,7 @@ class Builder(NodeVisitor):
 
 		self.batch_executor = BatchExecutor(config.threads)
 
-		self.fresh_build = config.fresh_build
+		self.force_rebuild = config.fresh_build or config.build_script_updated
 
 		self.compiling_shared_lib = False
 
@@ -49,7 +49,7 @@ class Builder(NodeVisitor):
 
 
 	def detectStaleness(self, node: Node) -> bool:
-		if self.fresh_build:
+		if self.force_rebuild:
 			return True
 		else:
 			return isStale(node)

@@ -25,3 +25,6 @@ class BuildConfig:
 	directory: Directory
 	fresh_build: bool
 	threads: int
+	build_script: Path
+	build_script_updated: bool
+
