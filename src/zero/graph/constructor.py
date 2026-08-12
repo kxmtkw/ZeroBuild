@@ -1,10 +1,9 @@
-from zero.compilers.manager import CompilerManager
-from zero.compilers.types import CompilerType
-from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.graph.nodes import *
 from zero.graph.target_name import TargetNameGenerator
-from zero.compilers import BaseCompilerDriver
 
+from zero.compilers import BaseCompilerDriver
+from zero.compilers.manager import CompilerManager
+from zero.compilers.types import CompilerType
 
 from zero.interface.target import Target
 from zero.interface.build import Build
@@ -16,11 +15,16 @@ from zero.interface.shared_lib import SharedLibrary
 from zero.interface.precomp_lib import PreCompiledLibrary
 
 from zero.orchestrator.config import BuildConfig
+
+from zero.errors.errors import ZeroCompilationError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.reporter import getReporter
 from zero.utils import CacheManager
 
 
 class GraphConstructor:
+	"""
+	Uses interface classes to construct the DAG.
+	"""
 
 	def __init__(self, config: BuildConfig) -> None:
 
@@ -44,18 +48,24 @@ class GraphConstructor:
 		self.old_mtime_cache = CacheManager(self.build_dir / "old_mtime.cache")
 		self.mtime_cache = CacheManager(self.build_dir / "mtime.cache")
 
+		# causes a rebuild of the DAG if the build file updated
 		if config.build_script_updated:
 			self.old_mtime_cache.clear()
-		
-		self.include_dirs: list[Path] = []
-		
+				
 
 	def makeRoot(self, build: Build, all_targets: list[Target], specific_targets: list[Target] = []) -> RootNode:
 
 		targets = []
 		compilers = {}
 
+		# all targets are built one by one irrespective of location in the dag
+
 		for t in all_targets:
+
+			# the compiler switching logic might fail if a library dependency uses a different compiler
+			# but this would be fine because dependencies will always be defined first due to python syntax
+			# so the library node would already be created
+
 			self.current_compiler = t._compiler_object
 			node = self.makeTargetNode(t)
 			compilers[node] = self.current_compiler
@@ -83,7 +93,7 @@ class GraphConstructor:
 		elif isinstance(target, SharedLibrary):
 			return self.makeSharedLibraryNode(target)
 		else:
-			raise RuntimeError("What")
+			raise RuntimeError()
 
 
 	def makeLibraryNode(self, lib: Library) -> LibraryNode:
@@ -95,7 +105,7 @@ class GraphConstructor:
 		elif isinstance(lib, SharedLibrary):
 			return self.makeSharedLibraryNode(lib)
 		else:
-			raise RuntimeError("What")
+			raise RuntimeError()
 
 
 	def makeExecutableNode(self, exe: Executable) -> ExecutableNode:
@@ -103,7 +113,7 @@ class GraphConstructor:
 		if exe in self.made_executables:
 			return self.made_executables[exe]
 		
-		outfile = self.target_name_gen.executable(self.exec_dir,  exe._name)
+		outfile = self.target_name_gen.executable(self.exec_dir, exe._name)
 		
 		include_dirs: list[Path] = []
 		lib_nodes: list[LibraryNode] = []
@@ -115,9 +125,7 @@ class GraphConstructor:
 		
 		include_dirs.extend(exe.headers.private)
 
-		self.include_dirs = include_dirs
-
-		source_nodes = self.makeSourceNodes(exe.source)
+		source_nodes = self.makeSourceNodes(exe.source, include_dirs)
 
 		node = ExecutableNode(
 			outfile,
@@ -151,9 +159,7 @@ class GraphConstructor:
 		include_dirs.extend(lib.headers.private)
 		include_dirs.extend(lib.headers.public)
 
-		self.include_dirs = include_dirs
-
-		source_nodes = self.makeSourceNodes(lib.source)
+		source_nodes = self.makeSourceNodes(lib.source, include_dirs)
 		
 		node = StaticLibraryNode(
 			outfile,
@@ -187,9 +193,7 @@ class GraphConstructor:
 		include_dirs.extend(lib.headers.private)
 		include_dirs.extend(lib.headers.public)
 
-		self.include_dirs = include_dirs
-
-		source_nodes = self.makeSourceNodes(lib.source)
+		source_nodes = self.makeSourceNodes(lib.source, include_dirs)
 		
 		node = SharedLibraryNode(
 			targetpath,
@@ -213,7 +217,7 @@ class GraphConstructor:
 		)
 
 
-	def makeHeaderNode(self, path: Path) -> HeaderNode:
+	def makeHeaderNode(self, path: Path, include_dirs: list[Path]) -> HeaderNode:
 
 		if path in self.visited_headers:
 			return self.visited_headers[path]
@@ -239,13 +243,13 @@ class GraphConstructor:
 			cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
 
 		if cached_deps is None:
-			deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+			deps = self.current_compiler.getDependencies(path, include_dirs=include_dirs) 
 			self.cache.set(str(path), value=[str(d) for d in deps])
 		else:
 			deps = [Path(d) for d in cached_deps]
 
 		try:
-			included_headers = [self.makeHeaderNode(d) for d in deps]
+			included_headers = [self.makeHeaderNode(d, include_dirs) for d in deps]
 		except ZeroHeaderNotFoundError as e:
 			raise ZeroHeaderNotFoundError(str(e) + f"\n -- while processing header file '{str(path)}'")
 		
@@ -254,7 +258,7 @@ class GraphConstructor:
 		return header
 			
 
-	def _makeSourceNode(self, path: Path) -> SourceNode:
+	def _makeSourceNode(self, path: Path, include_dirs: list[Path]) -> SourceNode:
 
 		if path in self.visited_sources:
 			return self.visited_sources[path]
@@ -275,20 +279,22 @@ class GraphConstructor:
 		)
 		self.visited_sources[path] = source
 
-		# 0 because if the old mtime cache does not exist, new_mtime will always be greater than 0
+		# old mtime defaults to 0, so it always rebuilds if old mtime is missing
+
 		old_mtime = self.old_mtime_cache.get(str(path), default=0, valid_classes=(float,int,)) 
 		new_mtime = self.mtime_cache.set(str(path), value=path.stat().st_mtime)
 
-		
+
 		if new_mtime > old_mtime:
 			cached_deps = None
 		else:
 			cached_deps = self.cache.get(str(path), default=None, valid_classes=(list,))
-		
-		if cached_deps is None:
 
+		# get deps if the cache is missing or file updated
+
+		if cached_deps is None:
 			try:
-				deps = self.current_compiler.getDependencies(path, include_dirs=self.include_dirs) 
+				deps = self.current_compiler.getDependencies(path, include_dirs=include_dirs) 
 			except ZeroCompilationError as e:
 				raise ZeroHeaderNotFoundError(e.error + f"\n -- while processing source file '{str(path)}'")
 			
@@ -297,7 +303,7 @@ class GraphConstructor:
 			deps = [Path(d) for d in cached_deps]
 
 		try:
-			included_headers = [self.makeHeaderNode(d) for d in deps]
+			included_headers = [self.makeHeaderNode(d, include_dirs) for d in deps]
 		except ZeroHeaderNotFoundError as e:
 			raise ZeroHeaderNotFoundError(str(e) + f"\n -- while processing source file '{str(path)}'")
 
@@ -306,5 +312,5 @@ class GraphConstructor:
 		return source
 	
 
-	def makeSourceNodes(self, source: Source) -> list[SourceNode]:
-		return [self._makeSourceNode(p) for p in source._sources_paths]
+	def makeSourceNodes(self, source: Source, include_dirs: list[Path]) -> list[SourceNode]:
+		return [self._makeSourceNode(p, include_dirs) for p in source._sources_paths]

@@ -8,7 +8,7 @@ class NodeVisitor(ABC):
 
 
 	def __init__(self) -> None:
-		pass
+		self._visited_nodes: set[Node] = set()
 
 
 	def visit(self, node: Node):
@@ -20,6 +20,12 @@ class NodeVisitor(ABC):
 			raise NotImplementedError(f"{method_name} not implemented for {type(self)}")
 		
 		method(node)
+
+		self._visited_nodes.add(node)
+
+
+	def visited(self, node: Node) -> bool:
+		return (node in self._visited_nodes)
 
 
 	@abstractmethod

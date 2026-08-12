@@ -2,13 +2,10 @@ import platform
 from pathlib import Path
 
 
-from zero.errors import ZeroError
-
 class TargetNameGenerator():
 	"""
 	Helper class to generate target names.
 	"""
-
 
 	def __init__(self) -> None:
 		self._os = platform.system().lower()
@@ -31,7 +28,7 @@ class TargetNameGenerator():
 		"""
 		Generate a shared library file path. 
 		The first path is the location of the shared library while the second path indicates the path to link against.
-		For linux and macos, it is the same path.
+		For linux and macos, both items are the same path.
 		"""
 		if self._os == "linux":
 			path = directory / ("lib" + name + ".so")
@@ -40,7 +37,7 @@ class TargetNameGenerator():
 			path = directory / ("lib" + name + ".dylib")
 			return (path, path)
 		else:
-			# we assume one windows will be here for now.
+			# we assume only windows will be here for now.
 			dll_path = directory / ( name + ".dll")
 			lib_path = directory / ( name + ".lib")
 			return (dll_path, lib_path)
@@ -53,5 +50,5 @@ class TargetNameGenerator():
 		if self._os == "linux" or self._os == "darwin":
 			return directory / name
 		else:
-			# we assume one windows will be here for now.
+			# we assume only windows will be here for now.
 			return directory / ( name + ".exe")

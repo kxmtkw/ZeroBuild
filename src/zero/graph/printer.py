@@ -1,6 +1,8 @@
-from .nodes import *
-from .visitor import NodeVisitor
+from zero.graph.nodes import *
+from zero.graph.visitor import NodeVisitor
+
 from zero.reporter.get import getReporter
+
 
 class NodePrinter(NodeVisitor):
 
