@@ -71,7 +71,15 @@ class TerminalReporter:
 		if self._is_phase:
 			self._console.print(f"    [blue]│[/blue]")
 
-		self._console.print(Panel(f"[{color}]{msg.strip()}[/{color}]", title=title, border_style=f"bold {color}", padding=(1,2)))
+		self._console.print(
+			Panel(
+				f"[{color}]{msg.strip()}[/{color}]", 
+				title=title, 
+				border_style=f"bold {color}", 
+				padding=(1,2), 
+				title_align="left"
+			)
+		)
 
 		if self._is_phase:
 			self._console.print(f"    [blue]│[/blue]")
