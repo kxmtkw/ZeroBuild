@@ -2,9 +2,10 @@ from zero.interface.target import Target
 from zero.interface.library import Library
 from zero.interface.headers import Headers
 
+
 class SharedLibrary(Target, Library):
 	"""
-	Class to build a shared library
+	Build a shared library target.
 	"""
 
 	def __init__(self) -> None:

@@ -4,7 +4,7 @@ from zero.interface.headers import Headers
 
 class StaticLibrary(Target, Library):
 	"""
-	Class to build a static library.
+	Build a static library target.
 	"""
 
 	def __init__(self) -> None:

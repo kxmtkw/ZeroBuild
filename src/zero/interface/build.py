@@ -1,19 +1,21 @@
 from pathlib import Path
-from typing import Literal
 
 from zero.compilers.base import BaseCompilerDriver
 from zero.compilers.manager import CompilerManager
 from zero.compilers.types import CompilerType
-from zero.errors.errors import ZeroAPIError
 
 from zero.interface.types import FlagType
-
 from zero.interface.internals import Internals
+
+from zero.errors.errors import ZeroAPIError
 
 
 class Build:
 	"""
-	Core class to make the build system.
+	Core class to configure the build system.
+	Use it to set global/fallback compiler and arguments.
+
+	Must be set to the variable `build` for Zero to detect it. Fails if not found.
 	"""
 
 
@@ -41,7 +43,8 @@ class Build:
 	@property
 	def compiler(self):
 		"""
-		Specify a compiler for the build system. 
+		Specify a fallback compiler for the build system.
+		Any target that does not specify a compiler will automatically inherit from this one.
 		"""
 		return self._compiler
 
@@ -54,7 +57,8 @@ class Build:
 	@property
 	def directory(self):
 		"""
-		Set a directory for the build system. If not specified, defaults to ./build
+		Set a directory for the build system. 
+		If not specified, defaults to ./build
 		"""
 		return self._directory
 
@@ -69,7 +73,7 @@ class Build:
 		"""
 		Global arguments to be passed to the compiler for all targets in the build system.
 		Not recommended if the build system has multiple languages or uses multiple compilers.
-		Should only be used if the whole project uses the same compiler or the same language.
+		Should only be used if the whole project uses the same compiler and the same language.
 		"""
 		return self._arguments
 
@@ -83,5 +87,9 @@ class Build:
 
 
 	def addCompiler(self, name: str, compiler: Internals.CompilerDriver):
-		"Add a custom compiler driver to the build system."
+		"""
+		Add a custom compiler driver to the build system.
+		The driver can then be referred in the build system by the `name` value.
+		Can overshadow existing compilers.
+		"""
 		CompilerManager.addCompiler(name, compiler)

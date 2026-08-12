@@ -1,11 +1,11 @@
 from pathlib import Path
+
 from zero.errors.errors import ZeroAPIError
 
 
 class Source:
 	"""
 	Specify source files for a target.
-	Source files can both of the string or path objects.
 	"""
 
 	def __init__(self, *files: str | Path) -> None:

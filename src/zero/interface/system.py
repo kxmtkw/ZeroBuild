@@ -7,7 +7,7 @@ from pathlib import Path
 
 class System:
 	"""
-	Class exposing system related utilities. Does not need to be created.
+	Static class exposing system related utilities.
 	"""
 
 	def __init__(self) -> None:

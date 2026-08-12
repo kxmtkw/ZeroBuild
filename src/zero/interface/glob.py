@@ -16,7 +16,9 @@ def FileGlob(directory: PathType, pattern: str | None = None):
 	"""
 	Get all files from a given directory that matches the given pattern.
 	If no pattern is provided, it globs all files inside the directory.
-	If you want to glob all .c files within a directory: FileGlob(directory, "*.c")
+
+	For example,
+	If you want to glob all .c files within a directory: `FileGlob(directory, '*.c')`
 	"""
 
 	if isinstance(directory, str):

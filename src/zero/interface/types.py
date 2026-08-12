@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import TypeAlias
 
-from .flags import Flags, LiteralFlag
+from zero.interface.flags import Flags, LiteralFlag
 
 PathType: TypeAlias = Path | str
 FlagType: TypeAlias = Flags | LiteralFlag | str

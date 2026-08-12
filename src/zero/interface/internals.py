@@ -3,7 +3,9 @@ from zero.compilers import *
 
 
 class Internals:
-
+	"""
+	Static class exposing build system internals.
+	"""
 
 	class CompilerDriver(BaseCompilerDriver):
 		"""

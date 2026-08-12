@@ -5,7 +5,9 @@ from typing import Literal, TypeAlias, Union
 
 
 class Flags(str, Enum):
-	"""Compiler flags with inline documentation and driver compatibility info."""
+	"""
+	Common compiler flags with inline documentation to help you out.
+	"""
 
 	# ==========================================
 	# GCC / Clang Warnings & Diagnostics
