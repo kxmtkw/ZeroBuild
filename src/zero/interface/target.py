@@ -37,7 +37,7 @@ class Target:
 			raise ZeroAPIError(f"Unknown compiler specified for target [bold]{getattr(self, '_name', 'unknown')}[/bold]: '{self._compiler}'")
 
 		if not self._compiler_object.doesExist():
-			raise ZeroAPIError(f"Compiler '{self._compiler}' not found in PATH for target [bold]{getattr(self, '_name', 'unknown')}[/bold]'.")
+			raise ZeroAPIError(f"Compiler '{self._compiler}' not found in PATH for target [bold]{getattr(self, '_name', 'unknown')}[/bold].")
 
 		for lib in self._linked_libs:
 			if not isinstance(lib, Library):
