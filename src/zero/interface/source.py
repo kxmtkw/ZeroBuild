@@ -25,3 +25,7 @@ class Source:
 				raise ZeroAPIError(f"Source file not found: {str(p)}")
 			
 			self._sources_paths.append(p)
+
+
+	def __add__(self, other: Source):
+		return Source(*(self._sources_paths + other._sources_paths))
