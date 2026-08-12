@@ -19,6 +19,7 @@ class StaleDetector(NodeVisitor):
 
 
 	def __init__(self, config: BuildConfig) -> None:
+		super().__init__()
 		self.visited_nodes: set[Node] = set()
 		self.current_source_outpath: Path | None = None	
 		self.stale_count = 0
@@ -39,9 +40,7 @@ class StaleDetector(NodeVisitor):
 
 	def visitRootNode(self, node: RootNode):
 
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
 		
 		for t in node.targets:
@@ -50,11 +49,8 @@ class StaleDetector(NodeVisitor):
 		
 	def visitExecutableNode(self, node: ExecutableNode):
 
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
-		
 
 		for lib in node.linked_libraries:
 			self.visit(lib)
@@ -71,9 +67,7 @@ class StaleDetector(NodeVisitor):
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
 
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
 
 		for lib in node.linked_libraries:
@@ -91,11 +85,8 @@ class StaleDetector(NodeVisitor):
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
 		
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
-
 
 		for lib in node.linked_libraries:
 			self.visit(lib)
@@ -112,17 +103,13 @@ class StaleDetector(NodeVisitor):
 
 	def visitPreCompiledLibraryNode(self, node: PreCompiledLibraryNode):
 		
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
 
 
 	def visitSourceNode(self, node: SourceNode):
 
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
 
 		old_mtime = self.old_mtime_cache.get(str(node.filepath), default=0, valid_classes=(float,int,)) 
@@ -146,9 +133,7 @@ class StaleDetector(NodeVisitor):
 
 	def visitHeaderNode(self, node: HeaderNode):
 		
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-		else:
+		if self.visited(node):
 			return
 
 		if self.current_source_outpath is None:

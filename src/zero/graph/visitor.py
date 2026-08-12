@@ -8,7 +8,7 @@ class NodeVisitor(ABC):
 
 
 	def __init__(self) -> None:
-		self._visited_nodes: set[Node] = set()
+		self._visitor_visited_nodes: set[Node] = set()
 
 
 	def visit(self, node: Node):
@@ -21,11 +21,11 @@ class NodeVisitor(ABC):
 		
 		method(node)
 
-		self._visited_nodes.add(node)
+		self._visitor_visited_nodes.add(node)
 
 
 	def visited(self, node: Node) -> bool:
-		return (node in self._visited_nodes)
+		return (node in self._visitor_visited_nodes)
 
 
 	@abstractmethod

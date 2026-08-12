@@ -7,10 +7,12 @@ from zero.reporter import getReporter
 
 
 class CycleDetector(NodeVisitor):
-
+	"""
+	Analyzer to detect cycles in the graph. Uses DFS.
+	"""
 
 	def __init__(self) -> None:
-		self.visited_nodes: set[Node] = set()
+		super().__init__()
 		self.tracked_nodes: list[Node] = []
 
 		self.cycle: list[Node] = []
@@ -44,9 +46,6 @@ class CycleDetector(NodeVisitor):
 
 	def visitRootNode(self, node: RootNode):
 
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
-
 		self.tracked_nodes.append(node)
 
 		for t in node.targets:
@@ -59,8 +58,6 @@ class CycleDetector(NodeVisitor):
 
 		
 	def visitExecutableNode(self, node: ExecutableNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
 
 		if node in self.tracked_nodes:
 			self.getCycle(node)
@@ -78,8 +75,6 @@ class CycleDetector(NodeVisitor):
 
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
 
 		if node in self.tracked_nodes:
 			self.getCycle(node)
@@ -97,8 +92,6 @@ class CycleDetector(NodeVisitor):
 
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
 
 		if node in self.tracked_nodes:
 			self.getCycle(node)
@@ -116,13 +109,10 @@ class CycleDetector(NodeVisitor):
 	
 
 	def visitPreCompiledLibraryNode(self, node: PreCompiledLibraryNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
+		pass
 
 
 	def visitSourceNode(self, node: SourceNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
 
 		if node in self.tracked_nodes:
 			self.getCycle(node)
@@ -137,8 +127,6 @@ class CycleDetector(NodeVisitor):
 
 
 	def visitHeaderNode(self, node: HeaderNode):
-		if node not in self.visited_nodes:
-			self.visited_nodes.add(node)
 
 		if node in self.tracked_nodes:
 			self.getCycle(node)
