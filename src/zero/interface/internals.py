@@ -20,4 +20,5 @@ class Internals:
 		GxxCompiler = GxxCompiler
 		ClangCompiler = ClangCompiler
 		ClangxxCompiler = ClangxxCompiler
+		MsvcCompiler = MsvcCompiler
 

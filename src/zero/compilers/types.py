@@ -5,5 +5,6 @@ CompilerType = str | Literal[
 	"g++", 
 	"clang", 
 	"clang++",
+	"msvc",
 	"inherit"
 ]

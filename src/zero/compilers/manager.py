@@ -6,6 +6,7 @@ from zero.compilers.clang import ClangCompiler
 from zero.compilers.clangxx import ClangxxCompiler
 from zero.compilers.gcc import GccCompiler
 from zero.compilers.gxx import GxxCompiler
+from zero.compilers.msvc import MsvcCompiler
 
 from zero.compilers.types import CompilerType
 
@@ -14,6 +15,7 @@ _COMPILERS = {
 	"g++": GxxCompiler(),
 	"clang": ClangCompiler(),
 	"clang++": ClangxxCompiler(),
+	"msvc": MsvcCompiler()
 }
 
 
