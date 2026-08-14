@@ -112,8 +112,8 @@ class Orchestrator:
 
 		config = self.configureBuild(build.directory, fresh_build, threads)
 			
-		self.reporter.info("Directory", f"{str(build.directory)} chosen.")
-		self.reporter.info("Threads", f"compiling with {config.threads} threads")
+		self.reporter.info("Directory", f"{str(build.directory)}")
+		self.reporter.info("Threads", f"compiling with {config.threads} thread{'s' if config.threads > 1 else 0}")
 
 		# Making the DAG
 		self.graph = GraphConstructor(config)
@@ -125,8 +125,6 @@ class Orchestrator:
 		except Exception as e:
 			self.reportError(e)
 			
-		self.reporter.info("Graph", "constructed")
-
 		# Detecting any cycles
 		cycle = CycleDetector()
 		
@@ -136,8 +134,6 @@ class Orchestrator:
 			self.reportAndExit("Circular Dependency Detected", str(e))
 		except Exception as e:
 			self.reportError(e)
-
-		self.reporter.info("Cycles", "none detected")
 
 		if config.fresh_build:
 			msg = "skipped - fresh make"
