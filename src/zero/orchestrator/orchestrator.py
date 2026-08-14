@@ -49,7 +49,7 @@ class Orchestrator:
 		return module
 	
 
-	def configureBuild(self, build_dir: Path, fresh_build: bool, threads: int) -> BuildConfig:
+	def configureBuild(self, build_dir: Path, fresh_build: bool, threads: int, export_compile_cmd: bool) -> BuildConfig:
 
 		config = BuildConfig()
 		config.directory = Directory()
@@ -64,7 +64,7 @@ class Orchestrator:
 		config.directory.create_all()
 
 		config.fresh_build = fresh_build
-
+		config.export_compile_commands = export_compile_cmd
 		config.threads = threads
 
 		config.build_script = Path("zerobuild.py")
@@ -113,7 +113,7 @@ class Orchestrator:
 		if len(specific_targets) > 0:
 			self.reportAndExit("Misconfigured Build File", f"Target{'s' if len(specific_targets) > 1 else ''} not found: {', '.join(specific_targets)}")
 
-		config = self.configureBuild(build.directory, fresh_build, threads)
+		config = self.configureBuild(build.directory, fresh_build, threads, build._export_compile_commands)
 			
 		self.reporter.info("Directory", f"{str(build.directory)}")
 		self.reporter.info("Threads", f"compiling with {config.threads} thread{'s' if config.threads > 1 else 0}")
@@ -218,7 +218,7 @@ class Orchestrator:
 			self.reportAndExit("Misconfigured Build File", f"Executable {name} not found.")
 
 		# mock config to get the binary dir
-		config = self.configureBuild(build.directory, False, 1)
+		config = self.configureBuild(build.directory, False, 1, False)
 		executable_path = config.directory.binary / name
 
 		if not executable_path.exists() or fresh_build:
@@ -245,7 +245,7 @@ class Orchestrator:
 		build = self.getBuild(module)
 		targets = self.getTargets(module)
 
-		config = self.configureBuild(build.directory, False, 1)
+		config = self.configureBuild(build.directory, False, 1, False)
 
 		self.graph = GraphConstructor(config)
 			

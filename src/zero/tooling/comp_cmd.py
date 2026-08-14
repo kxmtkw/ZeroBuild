@@ -22,7 +22,7 @@ class CompileCommandsGenerator(NodeVisitor):
 
 		# really only needs to be rebuilt if project structure changes which only changes
 		# if the build script itself updates
-		self.needs_rebuilding = config.build_script_updated
+		self.needs_rebuilding = config.build_script_updated and config.export_compile_commands
 
 		self.compiling_shared_lib = False
 		self.active_include_dirs: list[Path] = []

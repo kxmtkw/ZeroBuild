@@ -27,4 +27,5 @@ class BuildConfig:
 	threads: int
 	build_script: Path
 	build_script_updated: bool
+	export_compile_commands: bool
 

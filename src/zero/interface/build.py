@@ -24,6 +24,7 @@ class Build:
 		self._compiler: CompilerType | None = None
 		self._compiler_object: BaseCompilerDriver
 		self._arguments: list[str] = []
+		self._export_compile_commands: bool = False
 
 
 	def _validate(self) -> None:
@@ -84,6 +85,20 @@ class Build:
 			self._arguments = [str(arg) for arg in args]
 		else:
 			self._arguments = [str(args)]
+
+
+	@property
+	def export_compile_commands(self):
+		"""
+		Whether to export `compile_commands.json` file which is used for intellisense.
+		If turned on, will export the file whenever the build file updates.
+		"""
+		return self._export_compile_commands
+
+
+	@export_compile_commands.setter
+	def export_compile_commands(self, value: bool):
+		self._export_compile_commands = value
 
 
 	def addCompiler(self, name: str, compiler: Internals.CompilerDriver):
