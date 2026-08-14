@@ -229,9 +229,9 @@ class Orchestrator:
 
 		if build.directory.exists():
 			shutil.rmtree(build.directory)
-			self.reporter.info("Clearing Cache", f"Cleared {str(build.directory)}")
+			self.reporter.info("Clean", f"Cleared {str(build.directory)}")
 		else:
-			self.reporter.info("Clearing Cache", f"No cache found at {str(build.directory)} - Already Cleared")
+			self.reporter.info("Clean", f"No cache found at {str(build.directory)} - Already Cleared")
 
 
 	def printGraph(self):
