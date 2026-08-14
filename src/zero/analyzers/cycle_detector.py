@@ -1,8 +1,8 @@
-from zero.errors import ZeroCircularDependencyError
 from zero.graph.nodes import Node
 from zero.graph.visitor import NodeVisitor
 from zero.graph.nodes import *
 
+from zero.errors import ZeroCircularDependencyError
 from zero.reporter import getReporter
 
 
@@ -21,9 +21,7 @@ class CycleDetector(NodeVisitor):
 		self.reporter = getReporter()
 
 
-	def getCycle(self, node: Node):
-
-		self.is_cycle_detected = True
+	def detectCycle(self, node: Node):
 		
 		cycle = []
 
@@ -60,7 +58,7 @@ class CycleDetector(NodeVisitor):
 	def visitExecutableNode(self, node: ExecutableNode):
 
 		if node in self.tracked_nodes:
-			self.getCycle(node)
+			self.detectCycle(node)
 			return
 
 		self.tracked_nodes.append(node)
@@ -77,7 +75,7 @@ class CycleDetector(NodeVisitor):
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
 
 		if node in self.tracked_nodes:
-			self.getCycle(node)
+			self.detectCycle(node)
 			return
 
 		self.tracked_nodes.append(node)
@@ -94,7 +92,7 @@ class CycleDetector(NodeVisitor):
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
 
 		if node in self.tracked_nodes:
-			self.getCycle(node)
+			self.detectCycle(node)
 			return
 
 		self.tracked_nodes.append(node)
@@ -115,7 +113,7 @@ class CycleDetector(NodeVisitor):
 	def visitSourceNode(self, node: SourceNode):
 
 		if node in self.tracked_nodes:
-			self.getCycle(node)
+			self.detectCycle(node)
 			return
 
 		self.tracked_nodes.append(node)
@@ -129,7 +127,7 @@ class CycleDetector(NodeVisitor):
 	def visitHeaderNode(self, node: HeaderNode):
 
 		if node in self.tracked_nodes:
-			self.getCycle(node)
+			self.detectCycle(node)
 			return
 
 		self.tracked_nodes.append(node)
