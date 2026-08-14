@@ -3,23 +3,26 @@ import shutil
 
 from pathlib import Path
 
-from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroError, ZeroCompilationError
-from zero.errors.errors import ZeroHeaderNotFoundError, ZeroSourceNotFoundError
-from zero.graph.printer import NodePrinter
-from zero.interface.build import Build
 from zero.graph.constructor import GraphConstructor
+from zero.graph.printer import NodePrinter
+
 from zero.builder.builder import Builder
 
 from zero.analyzers.cycle_detector import CycleDetector
 from zero.analyzers.stale_detector import StaleDetector
 
+from zero.tooling import CompileCommandsGenerator
+
+from zero.interface.build import Build
 from zero.interface.executable import Executable
 from zero.interface.target import Target
+
+from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
+from zero.reporter import TerminalReporter
+from zero.utils import ModuleLoader, CacheManager
+
 from zero.orchestrator.config import BuildConfig, Directory
 from zero.orchestrator.executor import Executor
-from zero.reporter import TerminalReporter
-
-from zero.utils import ModuleLoader, CacheManager
 
 
 class Orchestrator:
@@ -154,6 +157,9 @@ class Orchestrator:
 			self.reportError(e)
 
 		self.builder.visit(root)
+
+		cmd = CompileCommandsGenerator(config)
+		cmd.visit(root)
 
 
 	def getBuild(self, module: ModuleLoader) -> Build:
