@@ -1,21 +1,19 @@
-from logging import info
 from threading import Lock
 
-from zero.compilers.manager import CompilerManager
-
-from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 from zero.graph.nodes import *
 from zero.graph.nodes import Node, SharedLibraryNode
 from zero.graph.visitor import NodeVisitor
 
-from zero.compilers import BaseCompilerDriver
+from zero.compilers.base import BaseCompilerDriver
+from zero.compilers.manager import CompilerManager
 
 from zero.orchestrator.config import BuildConfig
-from zero.reporter import getReporter
 from zero.analyzers.stale_detector import isStale
+from zero.reporter import getReporter
 from zero.utils.cache_manager import CacheManager
+from zero.errors import ZeroCompilationError, ZeroCompilationWarning
 
-from .batch_executor import BatchExecutor
+from zero.builder.batch_executor import BatchExecutor
 
 
 class Builder(NodeVisitor):
@@ -24,22 +22,22 @@ class Builder(NodeVisitor):
 
 		super().__init__()
 
-		self.batch_executor = BatchExecutor(config.threads)
-
 		self.force_rebuild = config.fresh_build or config.build_script_updated
 
-		self.compiling_shared_lib = False
+		self.batch_executor = BatchExecutor(config.threads)
 
-		self.include_dirs: list[Path] = []
-		self.visited_target_paths: set[Path] = set()
-		self.current_target_arguments: list[str] = []
+		self.compiling_shared_lib = False
+		self.active_include_dirs: list[Path] = []
+		self.active_target_arguments: list[str] = []	
 		self.accumulated_static_lib_chain: list[StaticLibraryNode] = []
+
+		self.compiled_target_paths: set[Path] = set()
 
 		self.reporter = getReporter()
 
-		self.root: RootNode
-		self.current_compiler: BaseCompilerDriver
-		self.compilers_stack: list[BaseCompilerDriver] = []
+		self.active_compiler: BaseCompilerDriver
+		self.active_compilers_map: dict[TargetNode, BaseCompilerDriver] = {}
+		self.active_compilers_stack: list[BaseCompilerDriver] = []
 
 		self.old_mtime_cache = CacheManager(config.directory.build / "old_mtime.cache")
 		self.mtime_cache = CacheManager(config.directory.build / "mtime.cache")
@@ -60,28 +58,39 @@ class Builder(NodeVisitor):
 		self.old_mtime_cache.save()
 
 
-	def visit(self, node: Node):
+	def pushCompiler(self, compiler: BaseCompilerDriver):
+		self.active_compilers_stack.append(self.active_compiler)
+		self.active_compiler = compiler
 
-		if isinstance(node, TargetNode):
-			self.compilers_stack.append(self.current_compiler)
-			self.current_compiler = self.root.target_compilers[node]
 
-			super().visit(node)
+	def popCompiler(self):
+		self.active_compiler = self.active_compilers_stack.pop()
 
-			self.current_compiler = self.compilers_stack.pop()
-			return
 
-		super().visit(node)
-			
+	def markPIC(self, path: Path) -> Path:
+		return path.parent / (path.name + ".pic")
+
+
+	def unmarkPIC(self, path: Path) -> Path:
+		return path.parent / (path.name.removesuffix(".pic"))
+
+	
+	def reportWarning(self, title: str, details: str):
+		self.reporter.box(details, color="yellow", title=title)
+
+	
+	def reportError(self, title: str, details: str):
+		self.reporter.box(details, color="red", title=title)
+
 
 	def visitRootNode(self, node: RootNode):
 
 		self.reporter.startPhase("Compilation", "Compiling")
 
-		self.root = node
+		self.active_compilers_map = node.target_compilers
 
 		for target in node.targets:
-			self.current_compiler = node.target_compilers[target]
+			self.active_compiler = self.active_compilers_map[target]
 
 			try:
 				self.visit(target)
@@ -96,42 +105,43 @@ class Builder(NodeVisitor):
 
 
 	def visitStaticLibraryNode(self, node: StaticLibraryNode):
-
+	
 		if self.compiling_shared_lib:
-			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name + ".pic")
+			node.libpath = node.targetpath = self.markPIC(node.targetpath)
 		else:
-			node.libpath = node.targetpath = node.targetpath.parent / (node.targetpath.name.removesuffix(".pic"))
+			node.libpath = node.targetpath = self.unmarkPIC(node.targetpath)
 
 		include_dirs = []
+
+		# we iterate over the dependencies before checking whether static lib needs to be compiled
+		# this is weird but it handles if a shared library is being compiled and any sub library is not pic compiled.
 		
 		for lib in node.linked_libraries:
 			if isinstance(lib, StaticLibraryNode):
 				self.accumulated_static_lib_chain.append(lib)
 			self.visit(lib)
 			include_dirs.extend(lib.public_headers)
-			
-
-		if node.targetpath in self.visited_target_paths:
+		
+		if node.targetpath in self.compiled_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
 			return
 
-
 		include_dirs.extend(node.public_headers)
 		include_dirs.extend(node.private_headers)
 
 		self.include_dirs = include_dirs
-		
 		self.current_target_arguments = node.arguments
 
+		self.pushCompiler(self.active_compilers_map[node])
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.active_compiler)}[/bold magenta]"
 
 		try:
-			self.current_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
+			self.active_compiler.buildStaticLib([n.outpath for n in node.sources], node.libpath)
 			self.reporter.info(title, msg, "bold green")
 		except ZeroCompilationError:
 			self.reporter.info(title, msg, "bold red")
@@ -140,12 +150,13 @@ class Builder(NodeVisitor):
 			self.reporter.info(title, msg, "bold yellow")
 			self.reportWarning(e.cause, str(e))
 
-		self.visited_target_paths.add(node.targetpath)
+		self.popCompiler()
+		self.compiled_target_paths.add(node.targetpath)
 
 
 	def visitSharedLibraryNode(self, node: SharedLibraryNode):
 
-		if node.targetpath in self.visited_target_paths:
+		if node.targetpath in self.compiled_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
@@ -154,9 +165,7 @@ class Builder(NodeVisitor):
 		self.compiling_shared_lib = True
 
 		include_dirs = []
-
-		self.accumulated_static_lib_chain.clear()
-
+		
 		for lib in node.linked_libraries:
 			if isinstance(lib, StaticLibraryNode):
 				self.accumulated_static_lib_chain.append(lib)
@@ -167,16 +176,16 @@ class Builder(NodeVisitor):
 		include_dirs.extend(node.private_headers)
 
 		self.include_dirs = include_dirs
-
 		self.current_target_arguments = node.arguments
 
+		self.pushCompiler(self.active_compilers_map[node])
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.libpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.active_compiler)}[/bold magenta]"
 
 		try:
-			self.current_compiler.buildSharedLib(
+			self.active_compiler.buildSharedLib(
 				[n.outpath for n in node.sources], 
 				[l.libpath for l in self.accumulated_static_lib_chain], 
 				node.libpath
@@ -188,32 +197,22 @@ class Builder(NodeVisitor):
 		except ZeroCompilationWarning as e:
 			self.reporter.info(title, msg, "bold yellow")
 			self.reportWarning(e.cause, str(e))
-		finally:
-			self.compiling_shared_lib = False
 
-		self.visited_target_paths.add(node.targetpath)
-	
-
-	def visitPreCompiledLibraryNode(self, node: PreCompiledLibraryNode):
-
-		if not node.libpath.exists():
-			raise RuntimeError(f"Could not find pre-compiled library: {node.libpath}")
-		
-		self.reporter.info("Found", f"{node.libpath}")
+		self.popCompiler()
+		self.compiling_shared_lib = False
+		self.compiled_target_paths.add(node.targetpath)
 
 
 	def visitExecutableNode(self, node: ExecutableNode):
 
-		if node.targetpath in self.visited_target_paths:
+		if node.targetpath in self.compiled_target_paths:
 			return
 		
 		if not self.detectStaleness(node):
 			return
-		
+
 		include_dirs = []
-
-		self.accumulated_static_lib_chain.clear()
-
+		
 		for lib in node.linked_libraries:
 			if isinstance(lib, StaticLibraryNode):
 				self.accumulated_static_lib_chain.append(lib)
@@ -223,16 +222,16 @@ class Builder(NodeVisitor):
 		include_dirs.extend(node.private_headers)
 
 		self.include_dirs = include_dirs
-
 		self.current_target_arguments = node.arguments
 
+		self.pushCompiler(self.active_compilers_map[node])
 		self.compileSources(node.sources)
 
 		title = "Link"
-		msg = f"{node.targetpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.current_compiler)}[/bold magenta]"
+		msg = f"{node.targetpath.name} [bold magenta]via {CompilerManager.getCompilerName(self.active_compiler)}[/bold magenta]"
 
 		try:
-			self.current_compiler.buildExecutable(
+			self.active_compiler.buildExecutable(
 				[n.outpath for n in node.sources], 
 				[l.libpath for l in self.accumulated_static_lib_chain], 
 				node.targetpath
@@ -245,20 +244,27 @@ class Builder(NodeVisitor):
 			self.reporter.info(title, msg, "bold yellow")
 			self.reportWarning(e.cause, str(e))
 
+		self.popCompiler()
+		self.compiled_target_paths.add(node.targetpath)
+
+
+	def visitPreCompiledLibraryNode(self, node: PreCompiledLibraryNode):
+
+		if not node.libpath.exists():
+			raise RuntimeError(f"Could not find pre-compiled library: {node.libpath}")
 		
-		self.visited_target_paths.add(node.targetpath)
+		self.reporter.info("Found", f"{node.libpath}")
 
 		
 	def visitSourceNode(self, node: SourceNode):
 
 		if self.compiling_shared_lib:
-			node.outpath = node.outpath.parent / (node.outpath.name + ".pic")
+			node.outpath = self.markPIC(node.outpath)
 		else:
-			node.outpath = node.outpath.parent / (node.outpath.name.removesuffix(".pic"))
+			node.outpath = self.unmarkPIC(node.outpath)
 		
-
-		with self.data_lock:
-			if node.outpath in self.visited_target_paths: return
+		with self.data_lock: 
+			if node.outpath in self.compiled_target_paths: return
 		
 		if not self.detectStaleness(node):
 			return
@@ -267,7 +273,7 @@ class Builder(NodeVisitor):
 			self.visit(deps)
 
 		try:
-			self.current_compiler.buildFile(
+			self.active_compiler.buildFile(
 				node.filepath, 
 				node.outpath, 
 				for_shared=self.compiling_shared_lib, 
@@ -284,20 +290,21 @@ class Builder(NodeVisitor):
 
 		with self.data_lock:
 			self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
-			self.visited_target_paths.add(node.outpath)
+			self.compiled_target_paths.add(node.outpath)
 		
 
 	def visitHeaderNode(self, node: HeaderNode):
 
-		if node.filepath in self.visited_target_paths:
+		if self.visited(node):
 			return
 
 		for deps in node.deps:
 			self.visit(deps)
 
-		self.visited_target_paths.add(node.filepath)
-
-		self.old_mtime_cache.set(str(node.filepath), value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,)))
+		self.old_mtime_cache.set(
+			str(node.filepath), 
+			value=self.mtime_cache.get(str(node.filepath), default=0, valid_classes=(int,float,))
+		)
 
 
 	def compileSources(self, sources: Sequence[SourceNode]):
@@ -318,10 +325,5 @@ class Builder(NodeVisitor):
 				self.reporter.info("Built", str(node.filepath), "bold red")
 				raise
 			
-
-	def reportWarning(self, title: str, details: str):
-		self.reporter.box(details, color="yellow", title=title)
-
-
-	def reportError(self, title: str, details: str):
-		self.reporter.box(details, color="red", title=title)
+	
+	
