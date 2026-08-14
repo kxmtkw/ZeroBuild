@@ -53,8 +53,9 @@ class MsvcCompiler(BaseCompilerDriver):
 		*,
 		for_shared: bool = False,
 		include_dirs: list[Path] = [],
-		arguments: list[str] = []
-	) -> None:
+		arguments: list[str] = [],
+		do_not_compile: bool = False
+	) -> list[str]:
 		
 		cmd = self.msvc_cmd.buildFile(
 			self.binary,
@@ -65,6 +66,9 @@ class MsvcCompiler(BaseCompilerDriver):
 			arguments=arguments
 		)
 
+		if do_not_compile:
+			return cmd
+		
 		process = subprocess.run(
 			cmd,
 			capture_output=True,
@@ -77,6 +81,8 @@ class MsvcCompiler(BaseCompilerDriver):
 
 		if len(process.stderr) > 0:
 			raise ZeroCompilationWarning(str(filepath), process.stderr)
+
+		return cmd
 
 
 	def buildStaticLib(self, objects: list[Path], outfile: Path) -> None:

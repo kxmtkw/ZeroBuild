@@ -24,7 +24,7 @@ class BaseCompilerDriver(ABC):
 
 
 	@abstractmethod
-	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = []) -> None:  
+	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = [], do_not_compile = False) -> list[str]:  
 		pass
 	
 

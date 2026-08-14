@@ -47,12 +47,15 @@ class GccCompiler(BaseCompilerDriver):
 		return self._parseDependencies(process.stdout)
 
 
-	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = []) -> None:  
+	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = [], do_not_compile = False) -> list[str]:  
 
 		cmd = self.gcc_cmd.buildFile(self.binary, filepath, outfile, for_shared=for_shared, include_dirs=include_dirs, arguments=arguments)
 
 		if for_shared:
 			cmd.append("-fPIC")
+
+		if do_not_compile:
+			return cmd
 
 		process = subprocess.run(
 			cmd,
@@ -66,6 +69,8 @@ class GccCompiler(BaseCompilerDriver):
 
 		if len(process.stderr) > 0:
 			raise ZeroCompilationWarning(str(filepath), process.stderr)
+
+		return cmd
 
 		
 	def buildStaticLib(self, objects: list[Path], outfile: Path) -> None:  
