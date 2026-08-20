@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Literal, TypeAlias, Union
+from typing import Any, Literal, TypeAlias, Union
+
+from zero.compilers.types import UsableCompilerType
 
 # written by ai :p because i am too lazy + i ain't writing this by hand
 
@@ -571,3 +573,18 @@ LiteralFlag: TypeAlias = Literal[
 	"/Z7",
 
 ]
+
+def Macro(name: str, *, value: Any = None, compiler: UsableCompilerType = "gcc") -> str:
+	"""
+	Generate a macro flag. A compiler needs to be specified. Defaults to GCC / Clang based macro flags.
+	"""
+
+	match compiler:
+		case "msvc":
+			flag = "/D"
+		case _:
+			flag = "-D"
+
+	return f"{flag}{name}{f'={value}' if value is not None else ''}"
+
+	
