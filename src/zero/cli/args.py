@@ -1,6 +1,33 @@
 import argparse
 import sys
+from typing import Any, Dict
 
+
+class ParseKeyValueDict(argparse.Action):
+
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: str | None = None,
+    ) -> None:
+
+        user_dict: Dict[str, str] = getattr(namespace, self.dest) or {}
+        
+        items = values if isinstance(values, list) else [values]
+        
+        for item in items:
+            if "=" not in item:
+                raise argparse.ArgumentError(
+                    self, f"Invalid format for '{item}'. Expected 'key=value'."
+                )
+            key, val = item.split("=", 1)
+            user_dict[key.strip()] = val.strip()
+            
+        setattr(namespace, self.dest, user_dict)
+		
 
 def add_make_command(subparsers: argparse._SubParsersAction) -> None:
 	parser = subparsers.add_parser(
@@ -8,20 +35,28 @@ def add_make_command(subparsers: argparse._SubParsersAction) -> None:
 		help="Make the whole build or specific targets",
 	)
 	parser.add_argument(
-		"--fresh",
+		"-f", "--fresh",
 		action="store_true",
 		help="Force a clean rebuild.",
 	)
 	parser.add_argument(
-		"--threads",
+		"-p", "--threads",
 		type=int,
 		default=1,
 		metavar="count",
 		help="Number of threads to use",
 	)
 	parser.add_argument(
-		"target",
-		nargs="*",
+		"-u", "--user",
+		nargs="+",
+		action=ParseKeyValueDict,
+		default={},
+		metavar="KEY=VALUE",
+		help="Specify user key-value options (e.g., --user debug=true level=2)",
+	)
+	parser.add_argument(
+		"-t", "--targets",
+		nargs="+",
 		default=[],
 		help="Target/s to build. If none specified, builds all.",
 	)

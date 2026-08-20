@@ -13,6 +13,7 @@ from zero.interface.glob import FileGlob
 from zero.interface.system import System
 from zero.interface.internals import Internals
 from zero.interface.flags import Flags
+from zero.interface.user_options import UserOptions
 
 __all__ = [
 	"Path",
@@ -25,5 +26,6 @@ __all__ = [
 	"FileGlob",
 	"System",
 	"Internals",
-	"Flags"
+	"Flags",
+	"UserOptions"
 ]

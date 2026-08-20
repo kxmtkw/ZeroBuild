@@ -2,6 +2,7 @@ import traceback
 import shutil
 
 from pathlib import Path
+from typing import Any
 
 from zero.graph.constructor import GraphConstructor
 from zero.graph.printer import NodePrinter
@@ -16,6 +17,7 @@ from zero.tooling import CompileCommandsGenerator
 from zero.interface.build import Build
 from zero.interface.executable import Executable
 from zero.interface.target import Target
+from zero.interface.user_options import UserOptions
 
 from zero.errors import ZeroAPIError, ZeroCircularDependencyError, ZeroHeaderNotFoundError, ZeroSourceNotFoundError
 from zero.reporter import TerminalReporter
@@ -259,7 +261,12 @@ class Orchestrator:
 		printer = NodePrinter()
 		printer.visit(root)
 
-		
+
+	def setUserOptions(self, options: dict[str, Any]):
+		for key, val in options.items():
+			setattr(UserOptions, key, val)
+
+
 	def abort(self):
 		if self.builder: 
 			self.builder.halt()
