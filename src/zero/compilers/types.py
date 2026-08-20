@@ -1,5 +1,13 @@
 from typing import Literal
 
+UsableCompilerType = str | Literal[
+	"gcc", 
+	"g++", 
+	"clang", 
+	"clang++",
+	"msvc"
+]
+
 CompilerType = str | Literal[
 	"gcc", 
 	"g++", 
@@ -8,3 +16,4 @@ CompilerType = str | Literal[
 	"msvc",
 	"inherit"
 ]
+

@@ -8,7 +8,7 @@ from zero.compilers.gcc import GccCompiler
 from zero.compilers.gxx import GxxCompiler
 from zero.compilers.msvc import MsvcCompiler
 
-from zero.compilers.types import CompilerType
+from zero.compilers.types import CompilerType, UsableCompilerType
 
 _COMPILERS = {
 	"gcc": GccCompiler(),
@@ -23,7 +23,7 @@ class CompilerManager:
 
 
 	@staticmethod
-	def getCompiler(compiler: CompilerType, default: BaseCompilerDriver | None = None) -> BaseCompilerDriver:
+	def getCompiler(compiler: UsableCompilerType, default: BaseCompilerDriver | None = None) -> BaseCompilerDriver:
 
 		try:
 			return _COMPILERS[compiler]

@@ -6,6 +6,7 @@ from zero.compilers.types import CompilerType
 
 from zero.interface.types import FlagType
 from zero.interface.internals import Internals
+from zero.interface.compilers import Compilers
 
 from zero.errors.errors import ZeroAPIError
 
@@ -26,6 +27,8 @@ class Build:
 		self._arguments: list[str] = []
 		self._export_compile_commands: bool = False
 
+		self._compilers = Compilers()
+
 
 	def _validate(self) -> None:
 		
@@ -42,7 +45,7 @@ class Build:
 
 		
 	@property
-	def compiler(self):
+	def default_compiler(self):
 		"""
 		Specify a fallback compiler for the build system.
 		Any target that does not specify a compiler will automatically inherit from this one.
@@ -50,8 +53,8 @@ class Build:
 		return self._compiler
 
 
-	@compiler.setter
-	def compiler(self, name: CompilerType):
+	@default_compiler.setter
+	def default_compiler(self, name: CompilerType):
 		self._compiler = name
 
 
@@ -85,6 +88,14 @@ class Build:
 			self._arguments = [str(arg) for arg in args]
 		else:
 			self._arguments = [str(args)]
+
+
+	@property
+	def compilers(self):
+		"""
+		Configure each compiler's properties.
+		"""
+		return self._compilers
 
 
 	@property

@@ -49,7 +49,14 @@ class GccCompiler(BaseCompilerDriver):
 
 	def buildFile(self, filepath: Path, outfile: Path, *, for_shared = False, include_dirs: list[Path] = [], arguments: list[str] = [], do_not_compile = False) -> list[str]:  
 
-		cmd = self.gcc_cmd.buildFile(self.binary, filepath, outfile, for_shared=for_shared, include_dirs=include_dirs, arguments=arguments)
+		cmd = self.gcc_cmd.buildFile(
+			self.binary, 
+			filepath, 
+			outfile, 
+			for_shared=for_shared, 
+			include_dirs=include_dirs,
+			arguments=self.base_arguments+arguments
+		)
 
 		if for_shared:
 			cmd.append("-fPIC")
